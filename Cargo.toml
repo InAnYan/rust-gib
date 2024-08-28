@@ -1,0 +1,5 @@
+[workspace]
+resolver = "2"
+
+memebers = []
+members = [ "gib-app", "gib-bot", "gib-feature-types", "gib-githost-types", "gib-github", "gib-improve-feature", "gib-label-feature", "gib-llm-types", "gib-openai"]

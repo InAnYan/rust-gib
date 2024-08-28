@@ -1,0 +1,12 @@
+[package]
+name = "gib-label-feature"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+async-trait = "0.1.81"
+gib-feature-types = { version = "0.1.0", path = "../gib-feature-types" }
+gib-githost-types = { version = "0.1.0", path = "../gib-githost-types" }
+gib-llm-types = { version = "0.1.0", path = "../gib-llm-types" }
+non-empty-string = "0.2.4"
+tokio = { version = "1.39.3", features = ["sync"] }

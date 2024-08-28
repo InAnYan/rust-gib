@@ -1,0 +1,11 @@
+[package]
+name = "gib-bot"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+futures = "0.3.30"
+gib-feature-types = { version = "0.1.0", path = "../gib-feature-types" }
+gib-githost-types = { version = "0.1.0", path = "../gib-githost-types" }
+non-empty-string = "0.2.4"
+nonempty = "0.10.0"

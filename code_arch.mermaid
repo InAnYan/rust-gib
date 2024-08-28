@@ -1,0 +1,7 @@
+flowchart TB
+    GitLabelFeature -- uses --> Llm
+    GitImproveFeature -- uses --> Llm
+    GitBot -- has --> GitLabelFeature
+    GitBot -- has --> GitImproveFeature
+    GitBot -- sends actions --> GitHost
+    GitBot -- pools events --> GitHost

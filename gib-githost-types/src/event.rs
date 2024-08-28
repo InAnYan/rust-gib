@@ -1,12 +1,12 @@
-use crate::gittypes::Issue;
+use crate::gittypes::{CommentId, IssueId, RepoId};
 
 pub struct GitEvent {
+    pub repo_id: RepoId,
+    pub issue_id: IssueId,
     pub kind: GitEventKind,
-    // `GitEvent` is made as a struct to future-proof it (*if I'm using the term correctly, I mean I
-    // left it as a struct, so that, what if in future I need to add a field that every event has?
-    // Time for example.*)
 }
 
 pub enum GitEventKind {
-    NewIssue(Issue),
+    NewIssue,
+    NewComment(CommentId),
 }
