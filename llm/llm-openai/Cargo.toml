@@ -1,0 +1,8 @@
+[package]
+name = "llm-openai"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+async-trait = "0.1.81"
+llm-types = { version = "0.1.0", path = "../llm-types" }

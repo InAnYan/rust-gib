@@ -1,0 +1,9 @@
+[package]
+name = "githost-github"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+async-trait = "0.1.81"
+githost-types = { version = "0.1.0", path = "../core/githost-types" }
+non-empty-string = "0.2.4"

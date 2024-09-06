@@ -2,4 +2,14 @@
 resolver = "2"
 
 memebers = []
-members = [ "gib-app", "gib-bot", "gib-feature-types", "gib-githost-types", "gib-github", "gib-improve-feature", "gib-label-feature", "gib-llm-types", "gib-openai"]
+members = [
+  "cli", 
+  "core/bot", 
+  "core/feature-types", 
+  "core/githost-types", 
+  "githost-github", 
+  "features/improve-feature", 
+  "features/label-feature", 
+  "llm/llm-types", 
+  "llm/llm-openai"
+]

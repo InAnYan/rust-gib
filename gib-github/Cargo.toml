@@ -1,9 +1,0 @@
-[package]
-name = "gib-github"
-version = "0.1.0"
-edition = "2021"
-
-[dependencies]
-async-trait = "0.1.81"
-gib-githost-types = { version = "0.1.0", path = "../gib-githost-types" }
-non-empty-string = "0.2.4"

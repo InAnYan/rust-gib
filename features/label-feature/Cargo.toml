@@ -1,0 +1,12 @@
+[package]
+name = "label-feature"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+async-trait = "0.1.81"
+feature-types = { version = "0.1.0", path = "../../core/feature-types" }
+githost-types = { version = "0.1.0", path = "../../core/githost-types" }
+llm-types = { version = "0.1.0", path = "../../llm/llm-types" }
+non-empty-string = "0.2.4"
+tokio = { version = "1.39.3", features = ["full", "sync"] }
