@@ -57,15 +57,15 @@ impl Llm for OpenAiLlm {
             )
             .temperature(params.temperature)
             .build()
-            .map_err(|e| GibError::UnknownError(e.into()))?; // I really have no idea why this may
-                                                             // fail...
+            .map_err(|e| GibError::UnknownError)?; // I really have no idea why this may
+                                                   // fail...
 
         let response = self
             .client
             .chat()
             .create(request)
             .await
-            .map_err(|e| GibError::LlmSendingError(e.into()))?;
+            .map_err(|e| GibError::LlmSendingError)?;
 
         Ok(AiMessage::from_str(
             &response
@@ -86,13 +86,13 @@ fn chat_message_to_openai(msg: ChatMessage) -> Result<ChatCompletionRequestMessa
         ChatMessage::UserMessage(content) => ChatCompletionRequestUserMessageArgs::default()
             .content(content.as_str())
             .build()
-            .map_err(|e| GibError::UnknownError(e.into()))
+            .map_err(|e| GibError::UnknownError)
             .map(|m| m.into()),
 
         ChatMessage::AiMessage(content) => ChatCompletionRequestAssistantMessageArgs::default()
             .content(content.as_str())
             .build()
-            .map_err(|e| GibError::UnknownError(e.into()))
+            .map_err(|e| GibError::UnknownError)
             .map(|m| m.into()),
     }
 }
@@ -101,6 +101,6 @@ fn make_system_message(content: impl AsRef<str>) -> Result<ChatCompletionRequest
     ChatCompletionRequestSystemMessageArgs::default()
         .content(content.as_ref())
         .build()
-        .map_err(|e| GibError::UnknownError(e.into()))
+        .map_err(|e| GibError::UnknownError)
         .map(|m| m.into())
 }

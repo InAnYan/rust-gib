@@ -28,7 +28,7 @@ mod cli_args;
 const GIT_EVENT_CHANNEL_BUFFER_SIZE: usize = 2;
 
 #[tokio::main]
-async fn main() {
+async fn main() -> Result<(), GibError> {
     let args = CliArgs::parse();
 
     let githost = GitHubHost::build(
@@ -96,7 +96,7 @@ async fn main() {
 
     let bot = GitBot::new(githost, features);
 
-    let (events_send, events_receive): (Sender<GitEvent>, Receiver<GitEvent>) =
+    let (events_send, mut events_receive): (Sender<GitEvent>, Receiver<GitEvent>) =
         channel(GIT_EVENT_CHANNEL_BUFFER_SIZE);
 
     let webhook_server_join =
@@ -110,5 +110,9 @@ async fn main() {
         Ok(())
     });
 
-    tokio::join!(webhook_server_join, bot_join).await
+    let (r1, r2) = tokio::join!(webhook_server_join, bot_join);
+    r1?;
+    r2.unwrap()?; // FIX: unwrap-crap.
+
+    Ok(())
 }
