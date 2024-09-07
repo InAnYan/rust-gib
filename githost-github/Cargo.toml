@@ -6,4 +6,7 @@ edition = "2021"
 [dependencies]
 async-trait = "0.1.81"
 githost-types = { version = "0.1.0", path = "../core/githost-types" }
+jsonwebtoken = { version = "9.3.0", features = ["use_pem"] }
 non-empty-string = "0.2.4"
+octocrab = { git = "https://github.com/InAnYan/octocrab", branch = "fix-for-ids" }
+secrecy = "0.8.0"

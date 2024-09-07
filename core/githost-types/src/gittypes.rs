@@ -1,7 +1,7 @@
 use non_empty_string::NonEmptyString;
 use nutype::nutype;
 
-#[nutype(derive(From, AsRef, Deref))]
+#[nutype(derive(Clone, Copy, From, AsRef, Deref))]
 pub struct UserId(usize);
 
 pub struct User {
@@ -9,7 +9,7 @@ pub struct User {
     pub nickname: NonEmptyString,
 }
 
-#[nutype(derive(From, AsRef, Deref))]
+#[nutype(derive(Clone, Copy, From, AsRef, Deref))]
 pub struct RepoId(usize);
 
 pub struct Repo {
@@ -18,7 +18,7 @@ pub struct Repo {
     pub name: String,
 }
 
-#[nutype(derive(From, AsRef, Deref))]
+#[nutype(derive(Clone, Copy, From, AsRef, Deref))]
 pub struct IssueId(usize);
 
 pub struct Issue {
@@ -26,7 +26,7 @@ pub struct Issue {
     pub body: NonEmptyString,
 }
 
-#[nutype(derive(From, AsRef, Deref))]
+#[nutype(derive(Clone, Copy, From, AsRef, Deref))]
 pub struct CommentId(usize);
 
 pub struct Comment {
@@ -35,7 +35,7 @@ pub struct Comment {
     pub body: NonEmptyString,
 }
 
-#[nutype(derive(From, AsRef, Deref))]
+#[nutype(derive(Clone, Copy, From, AsRef, Deref, PartialEq))]
 pub struct LabelId(usize);
 
 pub struct Label {

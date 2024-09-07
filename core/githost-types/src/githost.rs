@@ -3,7 +3,7 @@ use non_empty_string::NonEmptyString;
 
 use crate::{
     error::Result,
-    gittypes::{CommentId, Issue, IssueId, Label, LabelId, Repo, RepoId, User, UserId},
+    gittypes::{Comment, CommentId, Issue, IssueId, Label, LabelId, Repo, RepoId, User, UserId},
 };
 
 #[async_trait]
@@ -19,14 +19,14 @@ pub trait GitHost {
         repo_id: RepoId,
         issue_id: IssueId,
         comment_id: CommentId,
-    ) -> Result<Label>;
+    ) -> Result<Comment>;
 
     async fn make_comment(
         &self,
         repo_id: RepoId,
         issue_id: IssueId,
         message: NonEmptyString,
-    ) -> Result<Vec<Label>>;
+    ) -> Result<()>;
 
     async fn get_repo_labels(&self, repo_id: RepoId) -> Result<Vec<Label>>;
 
