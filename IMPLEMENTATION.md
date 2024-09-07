@@ -9,18 +9,3 @@
 # Implementation details
 
 The bot is designed to be modular and retargetable. Features can be turned off/on. This bot can be retargeted to other Git hosting (like GitLab or BitBucket).
-
-# Crate hierarchy
-
-- `cli`: used to start the bot.
-- `core`: main crates for the bot.
-  - `bot`: The Bot.
-  - `feature-types`: `GitBotFeature` type (the facade).
-  - `githost-types`: `GitHost` and `GitEvent` type (the facade).
-- `features`: collection of bot features.
-  - `improve-feature`: improves issues by asking the user for more relevant information.
-  - `label-feature`: automatic labelling of issues.
-- `llm`: crates related to LLM.
-  - `llm-types`: `Llm` type (the facade).
-  - `llm-openai`: OpenAI API compatible LLM implementation.
-- `github-githost`: GitHub `GitHost` implementation.

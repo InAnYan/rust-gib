@@ -1,9 +1,0 @@
-[package]
-name = "llm-types"
-version = "0.1.0"
-edition = "2021"
-
-[dependencies]
-async-trait = "0.1.81"
-nutype = "0.4.3"
-thiserror = "1.0.63"

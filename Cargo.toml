@@ -1,15 +1,29 @@
-[workspace]
-resolver = "2"
+[package]
+name = "gib"
+version = "0.1.0"
+edition = "2021"
 
-memebers = []
-members = [
-  "cli", 
-  "core/bot", 
-  "core/feature-types", 
-  "core/githost-types", 
-  "githost-github", 
-  "features/improve-feature", 
-  "features/label-feature", 
-  "llm/llm-types", 
-  "llm/llm-openai"
-]
+[lib]
+name = "gib"
+path = "src/lib.rs"
+
+[[bin]]
+name = "gib_cli"
+path = "src/main.rs"
+
+[dependencies]
+nutype = "0.4.3"
+thiserror = "1.0.63"
+async-openai = "0.24.0"
+non-empty-string = "0.2.4"
+secrecy = "0.8.0"
+url = "2.5.2"
+futures = "0.3.30"
+nonempty = "0.10.0"
+tokio = { version = "1.40.0", features = ["full"] }
+async-trait = "0.1.81"
+axum = "0.7.5"
+jsonwebtoken = { version = "9.3.0", features = ["use_pem"] }
+log = "0.4.22"
+octocrab = { git = "https://github.com/InAnYan/octocrab", branch = "ids-and-repository-webhook" }
+clap = { version = "4.5.17", features = ["derive"] }
