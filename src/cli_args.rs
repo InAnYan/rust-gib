@@ -1,29 +1,32 @@
-use std::net::IpAddr;
+use std::{
+    net::{IpAddr, Ipv4Addr},
+    str::FromStr,
+};
 
 use non_empty_string::NonEmptyString;
 use url::Url;
 
 #[derive(clap::Parser)]
 pub struct CliArgs {
-    #[arg(long, group = "Git host")]
+    #[arg(long, group = "Git host", default_value_t = GitHostChoice::GitHub)]
     pub githost: GitHostChoice,
 
     #[arg(long, group = "Git host")]
     pub app_id: usize,
 
-    #[arg(long, group = "Git host")]
+    #[arg(long, group = "Git host", default_value_t = IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)))]
     pub webhook_addr: IpAddr,
 
-    #[arg(long, group = "Git host")]
+    #[arg(long, group = "Git host", default_value_t = 8099)]
     pub webhook_server_port: u16,
 
-    #[arg(long, group = "LLM")]
+    #[arg(long, group = "LLM", default_value_t = LlmChoice::OpenAi)]
     pub llm: LlmChoice,
 
-    #[arg(long, group = "LLM")]
+    #[arg(long, group = "LLM", default_value_t = Url::from_str("https://api.openai.com/v1").unwrap())]
     pub llm_api_base_url: Url,
 
-    #[arg(long, group = "LLM")]
+    #[arg(long, group = "LLM", default_value = "gpt-4o-mini")]
     pub llm_model: NonEmptyString,
 
     #[arg(long, action)]
@@ -39,8 +42,24 @@ pub enum LlmChoice {
     // :)
 }
 
+impl ToString for LlmChoice {
+    fn to_string(&self) -> String {
+        match self {
+            LlmChoice::OpenAi => "openai".into(),
+        }
+    }
+}
+
 #[derive(Clone, clap::ValueEnum)]
 pub enum GitHostChoice {
     GitHub,
     // :)
+}
+
+impl ToString for GitHostChoice {
+    fn to_string(&self) -> String {
+        match self {
+            GitHostChoice::GitHub => "github".into(),
+        }
+    }
 }

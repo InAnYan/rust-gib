@@ -14,7 +14,7 @@ pub trait GitBotFeature {
     async fn process_event(
         &self,
         event: &GitEvent,
-        host: Arc<Mutex<dyn GitHost + Send>>,
+        host: Arc<Mutex<dyn GitHost + Send + Sync>>,
     ) -> Result<()>;
 
     fn get_name(&self) -> NonEmptyString;

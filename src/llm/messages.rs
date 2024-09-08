@@ -30,5 +30,17 @@ impl Deref for ChatMessage {
 #[nutype(validate(not_empty), derive(FromStr, AsRef, Deref))]
 pub struct UserMessage(String);
 
+impl Into<ChatMessage> for UserMessage {
+    fn into(self) -> ChatMessage {
+        ChatMessage::UserMessage(self)
+    }
+}
+
 #[nutype(validate(not_empty), derive(FromStr, AsRef, Deref))]
 pub struct AiMessage(String);
+
+impl Into<ChatMessage> for AiMessage {
+    fn into(self) -> ChatMessage {
+        ChatMessage::AiMessage(self)
+    }
+}

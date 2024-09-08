@@ -11,13 +11,13 @@ use crate::{
 use super::feature_type::GitBotFeature;
 
 pub struct GitBot {
-    host: Arc<Mutex<dyn GitHost + Send>>,
+    host: Arc<Mutex<dyn GitHost + Send + Sync>>,
     features: NonEmpty<Arc<Mutex<dyn GitBotFeature + Send>>>,
 }
 
 impl GitBot {
     pub fn new(
-        host: Arc<Mutex<dyn GitHost + Send>>,
+        host: Arc<Mutex<dyn GitHost + Send + Sync>>,
         features: NonEmpty<Arc<Mutex<dyn GitBotFeature + Send>>>,
     ) -> Self {
         Self { host, features }

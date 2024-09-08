@@ -27,3 +27,4 @@ jsonwebtoken = { version = "9.3.0", features = ["use_pem"] }
 log = "0.4.22"
 octocrab = { git = "https://github.com/InAnYan/octocrab", branch = "ids-and-repository-webhook" }
 clap = { version = "4.5.17", features = ["derive"] }
+smart-default = "0.7.1"
