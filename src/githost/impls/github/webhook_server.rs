@@ -1,23 +1,17 @@
 use std::net::IpAddr;
 
-use axum::{
-    extract::{Json, State},
-    routing::post,
-    serve, Router,
-};
+use axum::{body::Bytes, extract::State, http::header::HeaderMap, routing::post, serve, Router};
 use log::{error, info};
-use octocrab::models::webhook_events::{
-    payload::{IssueCommentWebhookEventAction, IssuesWebhookEventAction},
-    WebhookEventPayload,
+use octocrab::models::webhook_events::payload::{
+    IssueCommentWebhookEventAction, IssueCommentWebhookEventPayload, IssuesWebhookEventAction,
+    IssuesWebhookEventPayload,
 };
 use tokio::{net::TcpListener, sync::mpsc::Sender};
+use tower_http::trace::TraceLayer;
 
 use crate::{
     errors::{GibError, Result},
-    githost::{
-        event::{GitEvent, GitEventKind},
-        gittypes::{CommentId, IssueId, RepoId},
-    },
+    githost::event::{GitEvent, GitEventKind},
 };
 
 pub async fn listen_to_events(sender: Sender<GitEvent>, addr: IpAddr, port: u16) -> Result<()> {
@@ -38,51 +32,81 @@ fn create_routes(sender: Sender<GitEvent>) -> Router {
     Router::new()
         .route("/webhook", post(webhook))
         .with_state(sender)
+        .layer(TraceLayer::new_for_http())
 }
 
-async fn webhook(State(sender): State<Sender<GitEvent>>, Json(payload): Json<WebhookEventPayload>) {
-    match payload {
-        WebhookEventPayload::Issues(issues_event) => match issues_event.action {
-            IssuesWebhookEventAction::Opened => match sender
-                .send(GitEvent {
-                    repo_id: RepoId::from(*issues_event.repository.id as usize),
-                    issue_id: IssueId::from(*issues_event.issue.id as usize),
-                    kind: GitEventKind::NewIssue,
-                })
+async fn webhook(State(sender): State<Sender<GitEvent>>, headers: HeaderMap, body: Bytes) {
+    if let Some(event_type) = headers.get("X-GitHub-Event") {
+        match event_type.as_ref() {
+            b"issues" => {
+                handle_issues_event(
+                    sender,
+                    match serde_json::from_slice(&*body) {
+                        Ok(r) => r,
+                        Err(e) => {
+                            error!("Unable to deserialize GitHub event: {}", e);
+                            return;
+                        }
+                    },
+                )
                 .await
-            {
-                Ok(_) => info!("Received a GitEvent from webhook"),
-                Err(e) => error!("Unable to send GitEvent: {:?}", e),
-            },
+            }
 
-            _ => error!(
-                "Unsupported issues action: {:?}. Ignoring",
-                issues_event.action
-            ),
+            b"issue_comment" => {
+                handle_issue_comments_event(
+                    sender,
+                    match serde_json::from_slice(&*body) {
+                        Ok(r) => r,
+                        Err(e) => {
+                            error!("Unable to deserialize GitHub event: {}", e);
+                            return;
+                        }
+                    },
+                )
+                .await
+            }
+            _ => error!("Unsupported GitHub event type: {:?}", event_type.to_str()),
+        }
+    }
+}
+
+async fn handle_issues_event(sender: Sender<GitEvent>, payload: IssuesWebhookEventPayload) {
+    match payload.action {
+        IssuesWebhookEventAction::Opened => match sender
+            .send(GitEvent {
+                repo_id: payload.repository.id.into(),
+                issue_id: payload.issue.id.into(),
+                kind: GitEventKind::NewIssue,
+            })
+            .await
+        {
+            Ok(_) => info!("Received a GitEvent from webhook"),
+            Err(e) => error!("Unable to send GitEvent: {:?}", e),
         },
 
-        WebhookEventPayload::IssueComment(issue_comment_event) => {
-            match issue_comment_event.action {
-                IssueCommentWebhookEventAction::Created => match sender
-                    .send(GitEvent {
-                        repo_id: RepoId::from(*issue_comment_event.repository.id as usize),
-                        issue_id: IssueId::from(*issue_comment_event.issue.id as usize),
-                        kind: GitEventKind::NewComment(CommentId::from(
-                            *issue_comment_event.comment.id as usize,
-                        )),
-                    })
-                    .await
-                {
-                    Ok(_) => info!("Received a GitEvent from webhook"),
-                    Err(e) => error!("Unable to send GitEvent: {:?}", e),
-                },
-                _ => error!(
-                    "Unsupported issue comment action: {:?}. Ignoring",
-                    issue_comment_event.action
-                ),
-            }
-        }
+        _ => error!("Unsupported issues action: {:?}. Ignoring", payload.action),
+    }
+}
 
-        _ => error!("Unsupported GitHub event type: {:?}. Ignoring", payload),
+async fn handle_issue_comments_event(
+    sender: Sender<GitEvent>,
+    payload: IssueCommentWebhookEventPayload,
+) {
+    match payload.action {
+        IssueCommentWebhookEventAction::Created => match sender
+            .send(GitEvent {
+                repo_id: payload.repository.id.into(),
+                issue_id: payload.issue.id.into(),
+                kind: GitEventKind::NewComment(payload.comment.id.into()),
+            })
+            .await
+        {
+            Ok(_) => info!("Received a GitEvent from webhook"),
+            Err(e) => error!("Unable to send GitEvent: {:?}", e),
+        },
+        _ => error!(
+            "Unsupported issue comment action: {:?}. Ignoring",
+            payload.action
+        ),
     }
 }

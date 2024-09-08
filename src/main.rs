@@ -16,12 +16,14 @@ use non_empty_string::NonEmptyString;
 use nonempty::NonEmpty;
 use secrecy::{SecretString, SecretVec};
 use tokio::{
+    fs::read_to_string,
     sync::{
         mpsc::{channel, Receiver, Sender},
         Mutex,
     },
     task::JoinHandle,
 };
+use tracing_subscriber::{fmt, layer::SubscriberExt, util::SubscriberInitExt, EnvFilter};
 
 mod cli_args;
 
@@ -29,13 +31,19 @@ const GIT_EVENT_CHANNEL_BUFFER_SIZE: usize = 2;
 
 #[tokio::main]
 async fn main() -> Result<(), GibError> {
+    tracing_subscriber::registry()
+        .with(fmt::layer())
+        .with(EnvFilter::from_default_env())
+        .init();
+
     let args = CliArgs::parse();
 
     let githost = GitHubHost::build(
         args.app_id as u64,
         SecretVec::new(
-            std::env::var("GIB_KEY_PEM_RSA")
-                .expect("environment variable GIB_KEY_PEM_RSA must be set")
+            read_to_string(args.pem_rsa_key_path)
+                .await
+                .map_err(|_| GibError::SecretKeyDecodeError)?
                 .into(),
         ),
     )
