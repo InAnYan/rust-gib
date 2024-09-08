@@ -41,7 +41,7 @@ impl GitHost for GitHubHost {
             .users_by_id(octocrab::models::UserId::from(*id as u64))
             .profile()
             .await
-            .map_err(|e| GibError::GitHostRequestError)?;
+            .map_err(|_| GibError::GitHostRequestError)?;
 
         Ok(User {
             id,
@@ -58,7 +58,7 @@ impl GitHost for GitHubHost {
             .repos_by_id(octocrab::models::RepositoryId::from(*id as u64))
             .get()
             .await
-            .map_err(|e| GibError::GitHostRequestError)?;
+            .map_err(|_| GibError::GitHostRequestError)?;
 
         Ok(Repo {
             id,
@@ -77,7 +77,7 @@ impl GitHost for GitHubHost {
             .get(*issue_id as u64) // TODO: Insonsistency in the library. Expected IssueId or issue
             // number. Ahh, that's probably why there is no custom type.
             .await
-            .map_err(|e| GibError::GitHostRequestError)?;
+            .map_err(|_| GibError::GitHostRequestError)?;
 
         Ok(Issue {
             id: issue_id,
@@ -100,7 +100,7 @@ impl GitHost for GitHubHost {
             .issues_by_id(octocrab::models::RepositoryId::from(*repo_id as u64))
             .get_comment(octocrab::models::CommentId::from(*comment_id as u64))
             .await
-            .map_err(|e| GibError::GitHostRequestError)?;
+            .map_err(|_| GibError::GitHostRequestError)?;
 
         Ok(Comment {
             id: comment_id,
@@ -123,7 +123,7 @@ impl GitHost for GitHubHost {
             .issues_by_id(octocrab::models::RepositoryId::from(*repo_id as u64))
             .create_comment(*issue_id as u64, message)
             .await
-            .map_err(|e| GibError::GitHostRequestError)?;
+            .map_err(|_| GibError::GitHostRequestError)?;
 
         Ok(())
     }
@@ -135,7 +135,7 @@ impl GitHost for GitHubHost {
             .list_labels_for_repo()
             .send()
             .await
-            .map_err(|e| GibError::GitHostRequestError)?;
+            .map_err(|_| GibError::GitHostRequestError)?;
 
         let mut labels = Vec::new();
 
@@ -147,7 +147,7 @@ impl GitHost for GitHubHost {
                 .page(i)
                 .send()
                 .await
-                .map_err(|e| GibError::GitHostRequestError)?;
+                .map_err(|_| GibError::GitHostRequestError)?;
 
             for label in labels_page.into_iter() {
                 labels.push(Label {
@@ -183,7 +183,7 @@ impl GitHost for GitHubHost {
             .issues_by_id(octocrab::models::RepositoryId::from(*repo_id as u64))
             .add_labels(*issue_id as u64, &[label.name.into()])
             .await
-            .map_err(|e| GibError::GitHostRequestError)?;
+            .map_err(|_| GibError::GitHostRequestError)?;
 
         Ok(())
     }
