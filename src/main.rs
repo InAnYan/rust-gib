@@ -16,7 +16,7 @@ use non_empty_string::NonEmptyString;
 use nonempty::NonEmpty;
 use secrecy::{SecretString, SecretVec};
 use tokio::{
-    fs::read_to_string,
+    fs::read,
     sync::{
         mpsc::{channel, Receiver, Sender},
         Mutex,
@@ -41,10 +41,9 @@ async fn main() -> Result<(), GibError> {
     let githost = GitHubHost::build(
         args.app_id as u64,
         SecretVec::new(
-            read_to_string(args.pem_rsa_key_path)
+            read(args.pem_rsa_key_path)
                 .await
-                .map_err(|_| GibError::SecretKeyDecodeError)?
-                .into(),
+                .map_err(|_| GibError::SecretKeyDecodeError)?,
         ),
     )
     .expect("unable to create GitHub host");

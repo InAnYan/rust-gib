@@ -75,7 +75,7 @@ async fn handle_issues_event(sender: Sender<GitEvent>, payload: IssuesWebhookEve
         IssuesWebhookEventAction::Opened => match sender
             .send(GitEvent {
                 repo_id: payload.repository.id.into(),
-                issue_id: payload.issue.id.into(),
+                issue_id: payload.issue.number.into(),
                 kind: GitEventKind::NewIssue,
             })
             .await
@@ -96,7 +96,7 @@ async fn handle_issue_comments_event(
         IssueCommentWebhookEventAction::Created => match sender
             .send(GitEvent {
                 repo_id: payload.repository.id.into(),
-                issue_id: payload.issue.id.into(),
+                issue_id: payload.issue.number.into(),
                 kind: GitEventKind::NewComment(payload.comment.id.into()),
             })
             .await

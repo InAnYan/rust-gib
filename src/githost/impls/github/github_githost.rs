@@ -1,5 +1,6 @@
 use async_trait::async_trait;
 use jsonwebtoken::EncodingKey;
+use log::error;
 use non_empty_string::NonEmptyString;
 use octocrab::{Octocrab, OctocrabBuilder};
 use secrecy::{ExposeSecret, SecretVec};
@@ -119,11 +120,14 @@ impl GitHost for GitHubHost {
         issue_id: IssueId,
         message: NonEmptyString,
     ) -> Result<()> {
-        self.octocrab
+        let res = self
+            .octocrab
             .issues_by_id(octocrab::models::RepositoryId::from(*repo_id as u64))
             .create_comment(*issue_id as u64, message)
-            .await
-            .map_err(|_| GibError::GitHostRequestError)?;
+            .await;
+        //.map_err(|_| GibError::GitHostRequestError)?;
+        //
+        error!("{:?}", res);
 
         Ok(())
     }
