@@ -2,7 +2,7 @@ use async_trait::async_trait;
 use jsonwebtoken::EncodingKey;
 use log::error;
 use non_empty_string::NonEmptyString;
-use octocrab::{Octocrab, OctocrabBuilder};
+use octocrab::{models::InstallationId, Octocrab, OctocrabBuilder};
 use secrecy::{ExposeSecret, SecretVec};
 
 use crate::{
@@ -20,7 +20,7 @@ pub struct GitHubHost {
 }
 
 impl GitHubHost {
-    pub fn build(app_id: u64, key_pem_rsa: SecretVec<u8>) -> Result<Self> {
+    pub fn build(app_id: u64, installation_id: u64, key_pem_rsa: SecretVec<u8>) -> Result<Self> {
         let octocrab = OctocrabBuilder::new()
             .app(
                 app_id.into(),
@@ -29,6 +29,8 @@ impl GitHubHost {
             )
             .build()
             .map_err(|_| GibError::UnknownError)?;
+
+        let octocrab = octocrab.installation(InstallationId::from(installation_id));
 
         Ok(Self { octocrab })
     }

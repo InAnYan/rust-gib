@@ -40,6 +40,7 @@ async fn main() -> Result<(), GibError> {
 
     let githost = GitHubHost::build(
         args.app_id as u64,
+        args.installation_id as u64,
         SecretVec::new(
             read(args.pem_rsa_key_path)
                 .await

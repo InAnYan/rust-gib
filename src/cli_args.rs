@@ -15,6 +15,9 @@ pub struct CliArgs {
     #[arg(long)]
     pub app_id: usize,
 
+    #[arg(long)]
+    pub installation_id: usize,
+
     #[arg(long, default_value_t = IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)))]
     pub webhook_addr: IpAddr,
 
