@@ -1,15 +1,7 @@
-use non_empty_string::NonEmptyString;
-
-pub type Result<T> = std::result::Result<T, GibError>;
+pub type Result<T> = std::result::Result<T, GitHostError>;
 
 #[derive(Debug, thiserror::Error)]
-pub enum GibError {
-    #[error("unable to send request to LLM")]
-    LlmSendingError,
-
-    #[error("LLM returned message in the wrong format")]
-    LlmFormatError,
-
+pub enum GitHostError {
     #[error("unable to decode secret key")]
     SecretKeyDecodeError,
 
@@ -24,9 +16,6 @@ pub enum GibError {
 
     #[error("invalid format of the API response")]
     ApiResponseInvalidFormatError,
-
-    #[error("some features have returned errors")]
-    FeaturesError(Vec<(NonEmptyString, Box<GibError>)>),
 
     #[error("unknown error")]
     UnknownError,

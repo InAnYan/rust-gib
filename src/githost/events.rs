@@ -1,4 +1,4 @@
-use super::gittypes::{CommentId, IssueId, RepoId};
+use super::model::{CommentId, IssueId, RepoId};
 
 pub struct GitEvent {
     pub repo_id: RepoId,

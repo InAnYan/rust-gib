@@ -1,4 +1,5 @@
-pub mod event;
-pub mod githost;
-pub mod gittypes;
+pub mod errors;
+pub mod events;
+pub mod host;
 pub mod impls;
+pub mod model;

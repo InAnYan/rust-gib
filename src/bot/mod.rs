@@ -1,2 +1,2 @@
-pub mod feature_type;
+pub mod errors;
 pub mod gitbot;

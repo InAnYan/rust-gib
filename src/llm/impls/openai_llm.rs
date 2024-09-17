@@ -14,12 +14,10 @@ use non_empty_string::NonEmptyString;
 use secrecy::{ExposeSecret, SecretString};
 use url::Url;
 
-use crate::{
-    errors::{GibError, Result},
-    llm::{
-        llm::{CompletionParameters, Llm},
-        messages::{AiMessage, ChatMessage},
-    },
+use crate::llm::{
+    errors::{LlmError, Result},
+    llm::{CompletionParameters, Llm},
+    messages::{AiMessage, ChatMessage},
 };
 
 pub struct OpenAiLlm {
@@ -57,7 +55,7 @@ impl Llm for OpenAiLlm {
             )
             .temperature(params.temperature)
             .build()
-            .map_err(|_| GibError::UnknownError)?; // I really have no idea why this may
+            .map_err(|_| LlmError::UnknownError)?; // I really have no idea why this may
                                                    // fail...
 
         let response = self
@@ -65,19 +63,19 @@ impl Llm for OpenAiLlm {
             .chat()
             .create(request)
             .await
-            .map_err(|_| GibError::LlmSendingError)?;
+            .map_err(|_| LlmError::RequestError)?;
 
         Ok(AiMessage::from_str(
             &response
                 .choices
                 .get(0)
-                .ok_or(GibError::ApiResponseInvalidFormatError)?
+                .ok_or(LlmError::FormatError)?
                 .message
                 .content
                 .clone()
-                .ok_or(GibError::ApiResponseInvalidFormatError)?,
+                .ok_or(LlmError::FormatError)?,
         )
-        .map_err(|_| GibError::ApiResponseInvalidFormatError)?)
+        .map_err(|_| LlmError::FormatError)?)
     }
 }
 
@@ -86,13 +84,13 @@ fn chat_message_to_openai(msg: ChatMessage) -> Result<ChatCompletionRequestMessa
         ChatMessage::UserMessage(content) => ChatCompletionRequestUserMessageArgs::default()
             .content(content.as_str())
             .build()
-            .map_err(|_| GibError::UnknownError)
+            .map_err(|_| LlmError::UnknownError)
             .map(|m| m.into()),
 
         ChatMessage::AiMessage(content) => ChatCompletionRequestAssistantMessageArgs::default()
             .content(content.as_str())
             .build()
-            .map_err(|_| GibError::UnknownError)
+            .map_err(|_| LlmError::UnknownError)
             .map(|m| m.into()),
     }
 }
@@ -101,6 +99,6 @@ fn make_system_message(content: impl AsRef<str>) -> Result<ChatCompletionRequest
     ChatCompletionRequestSystemMessageArgs::default()
         .content(content.as_ref())
         .build()
-        .map_err(|_| GibError::UnknownError)
+        .map_err(|_| LlmError::UnknownError)
         .map(|m| m.into())
 }

@@ -1,9 +1,10 @@
 use async_trait::async_trait;
 use smart_default::SmartDefault;
 
-use crate::errors::Result;
-
-use super::messages::{AiMessage, ChatMessage};
+use super::{
+    errors::Result,
+    messages::{AiMessage, ChatMessage},
+};
 
 #[derive(SmartDefault)]
 pub struct CompletionParameters {

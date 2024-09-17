@@ -1,14 +1,15 @@
 use async_trait::async_trait;
 use non_empty_string::NonEmptyString;
 
-use crate::errors::Result;
-
-use super::gittypes::{
-    Comment, CommentId, Issue, IssueId, Label, LabelId, Repo, RepoId, User, UserId,
+use super::{
+    errors::Result,
+    model::{Comment, CommentId, Issue, IssueId, Label, LabelId, Repo, RepoId, User, UserId},
 };
 
 #[async_trait]
 pub trait GitHost {
+    fn get_self_name(&self) -> &NonEmptyString;
+
     async fn get_user(&self, id: UserId) -> Result<User>;
 
     async fn get_repo(&self, id: RepoId) -> Result<Repo>;

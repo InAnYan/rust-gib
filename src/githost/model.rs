@@ -1,7 +1,7 @@
 use non_empty_string::NonEmptyString;
 use nutype::nutype;
 
-#[nutype(derive(Clone, Copy, From, AsRef, Deref))]
+#[nutype(derive(Clone, Copy, From, AsRef, Deref, PartialEq))]
 pub struct UserId(usize);
 
 pub struct User {

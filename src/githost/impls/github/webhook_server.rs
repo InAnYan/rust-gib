@@ -2,16 +2,22 @@ use std::net::IpAddr;
 
 use axum::{body::Bytes, extract::State, http::header::HeaderMap, routing::post, serve, Router};
 use log::{error, info};
-use octocrab::models::webhook_events::payload::{
-    IssueCommentWebhookEventAction, IssueCommentWebhookEventPayload, IssuesWebhookEventAction,
-    IssuesWebhookEventPayload,
+use octocrab::models::{
+    webhook_events::{
+        payload::{
+            IssueCommentWebhookEventAction, IssueCommentWebhookEventPayload,
+            IssuesWebhookEventAction, IssuesWebhookEventPayload,
+        },
+        WebhookEvent, WebhookEventPayload,
+    },
+    Repository,
 };
 use tokio::{net::TcpListener, sync::mpsc::Sender};
 use tower_http::trace::TraceLayer;
 
-use crate::{
-    errors::{GibError, Result},
-    githost::event::{GitEvent, GitEventKind},
+use crate::githost::{
+    errors::{GitHostError, Result},
+    events::{GitEvent, GitEventKind},
 };
 
 pub async fn listen_to_events(sender: Sender<GitEvent>, addr: IpAddr, port: u16) -> Result<()> {
@@ -19,11 +25,11 @@ pub async fn listen_to_events(sender: Sender<GitEvent>, addr: IpAddr, port: u16)
 
     let listener = TcpListener::bind((addr, port))
         .await
-        .map_err(|_| GibError::WebhookServerBindError)?;
+        .map_err(|_| GitHostError::WebhookServerBindError)?;
 
     serve(listener, app.into_make_service())
         .await
-        .map_err(|_| GibError::WebhookServerError)?;
+        .map_err(|_| GitHostError::WebhookServerError)?;
 
     Ok(())
 }
@@ -37,44 +43,55 @@ fn create_routes(sender: Sender<GitEvent>) -> Router {
 
 async fn webhook(State(sender): State<Sender<GitEvent>>, headers: HeaderMap, body: Bytes) {
     if let Some(event_type) = headers.get("X-GitHub-Event") {
-        match event_type.as_ref() {
-            b"issues" => {
-                handle_issues_event(
-                    sender,
-                    match serde_json::from_slice(&*body) {
-                        Ok(r) => r,
-                        Err(e) => {
-                            error!("Unable to deserialize GitHub event: {}", e);
-                            return;
-                        }
-                    },
-                )
-                .await
+        match WebhookEvent::try_from_header_and_body(
+            match event_type.to_str() {
+                Ok(r) => r,
+                Err(e) => {
+                    error!("Unable to convert X-GitHub-Event to string: {}", e);
+                    return;
+                }
+            },
+            &body,
+        ) {
+            Ok(event) => {
+                handle_webhook_event(event, sender).await;
             }
-
-            b"issue_comment" => {
-                handle_issue_comments_event(
-                    sender,
-                    match serde_json::from_slice(&*body) {
-                        Ok(r) => r,
-                        Err(e) => {
-                            error!("Unable to deserialize GitHub event: {}", e);
-                            return;
-                        }
-                    },
-                )
-                .await
+            Err(err) => {
+                error!("Unable to determine GitHub webhook event: {}", err);
+                return;
             }
-            _ => error!("Unsupported GitHub event type: {:?}", event_type.to_str()),
         }
     }
 }
 
-async fn handle_issues_event(sender: Sender<GitEvent>, payload: IssuesWebhookEventPayload) {
+async fn handle_webhook_event(event: WebhookEvent, sender: Sender<GitEvent>) {
+    if let Some(repo) = event.repository {
+        match event.specific {
+            WebhookEventPayload::Issues(payload) => {
+                handle_issues_event(repo, *payload, sender).await
+            }
+            WebhookEventPayload::IssueComment(payload) => {
+                handle_issue_comments_event(repo, *payload, sender).await
+            }
+
+            _ => {
+                error!("Unsupported GitHub webhook event: {:?}", event.kind)
+            }
+        }
+    } else {
+        info!("Got a GitHub webhook event without repository. Currently, all supported events must have an asociated repository. Ignoring")
+    }
+}
+
+async fn handle_issues_event(
+    repo: Repository,
+    payload: IssuesWebhookEventPayload,
+    sender: Sender<GitEvent>,
+) {
     match payload.action {
         IssuesWebhookEventAction::Opened => match sender
             .send(GitEvent {
-                repo_id: payload.repository.id.into(),
+                repo_id: repo.id.into(),
                 issue_id: payload.issue.number.into(),
                 kind: GitEventKind::NewIssue,
             })
@@ -89,13 +106,14 @@ async fn handle_issues_event(sender: Sender<GitEvent>, payload: IssuesWebhookEve
 }
 
 async fn handle_issue_comments_event(
-    sender: Sender<GitEvent>,
+    repo: Repository,
     payload: IssueCommentWebhookEventPayload,
+    sender: Sender<GitEvent>,
 ) {
     match payload.action {
         IssueCommentWebhookEventAction::Created => match sender
             .send(GitEvent {
-                repo_id: payload.repository.id.into(),
+                repo_id: repo.id.into(),
                 issue_id: payload.issue.number.into(),
                 kind: GitEventKind::NewComment(payload.comment.id.into()),
             })

@@ -4,11 +4,11 @@ use nonempty::NonEmpty;
 use tokio::sync::Mutex;
 
 use crate::{
-    errors::{GibError, Result},
-    githost::{event::GitEvent, githost::GitHost},
+    features::feature_type::GitBotFeature,
+    githost::{events::GitEvent, host::GitHost},
 };
 
-use super::feature_type::GitBotFeature;
+use super::errors::{GitBotError, Result};
 
 pub struct GitBot {
     host: Arc<Mutex<dyn GitHost + Send + Sync>>,
@@ -34,14 +34,14 @@ impl GitBot {
                 .await
             {
                 Ok(()) => {}
-                Err(e) => res.push((feature.lock().await.get_name(), Box::new(e))),
+                Err(e) => res.push((feature.lock().await.get_name(), e)),
             }
         }
 
         if res.is_empty() {
             Ok(())
         } else {
-            Err(GibError::FeaturesError(res))
+            Err(GitBotError::FeaturesError(res))
         }
     }
 }

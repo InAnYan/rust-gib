@@ -1,18 +1,22 @@
 use std::{str::FromStr, sync::Arc};
 
 use async_trait::async_trait;
+use log::info;
 use non_empty_string::NonEmptyString;
 use tokio::sync::Mutex;
 
 use crate::{
-    bot::feature_type::GitBotFeature,
-    errors::Result,
-    githost::{event::GitEvent, githost::GitHost},
+    githost::{
+        events::{GitEvent, GitEventKind},
+        host::GitHost,
+    },
     llm::{
         llm::{CompletionParameters, Llm},
         messages::UserMessage,
     },
 };
+
+use super::{errors::Result, feature_type::GitBotFeature};
 
 pub struct GitLabelFeature {
     llm: Arc<Mutex<dyn Llm + Send>>,
@@ -31,27 +35,46 @@ impl GitBotFeature for GitLabelFeature {
         event: &GitEvent,
         host: Arc<Mutex<dyn GitHost + Send + Sync>>,
     ) -> Result<()> {
-        host.lock()
-            .await
-            .make_comment(
-                event.repo_id,
-                event.issue_id,
-                self.llm
+        match event.kind {
+            GitEventKind::NewIssue => {}
+
+            GitEventKind::NewComment(id) => {
+                let comment = host
                     .lock()
                     .await
-                    .complete(
-                        "you are a bot".try_into().unwrap(),
-                        vec![UserMessage::from_str("say something about labeling")
-                            .unwrap()
-                            .into()],
-                        &CompletionParameters::default(),
+                    .get_comment(event.repo_id, event.issue_id, id)
+                    .await?;
+
+                let comment_author = host.lock().await.get_user(comment.user_id).await?;
+
+                if &comment_author.nickname == host.lock().await.get_self_name() {
+                    info!("Received message is from the bot. Ignoring");
+                    return Ok(());
+                }
+
+                host.lock()
+                    .await
+                    .make_comment(
+                        event.repo_id,
+                        event.issue_id,
+                        self.llm
+                            .lock()
+                            .await
+                            .complete(
+                                "you are a bot".try_into().unwrap(),
+                                vec![UserMessage::from_str("say something about improving")
+                                    .unwrap()
+                                    .into()],
+                                &CompletionParameters::default(),
+                            )
+                            .await?
+                            .as_str()
+                            .try_into()
+                            .unwrap(),
                     )
-                    .await?
-                    .as_str()
-                    .try_into()
-                    .unwrap(),
-            )
-            .await?;
+                    .await?;
+            }
+        }
 
         Ok(())
     }
