@@ -1,0 +1,26 @@
+githost:
+  github:
+    bot_name: "intellectual-bot-for-github[bot]"
+    app_id: 990789
+    installation_id: 54597983
+    pem_rsa_key_path: "/home/ruslan/Downloads/intellectual-bot-for-github.2024-09-16.private-key.pem"
+
+webhook_server:
+  addr: "127.0.0.1"
+  port: 8099
+
+llm:
+  openai:
+    api_base_url: "https://api.openai.com/v1"
+    model_name: "gpt-4o-mini"
+
+features:
+  improve_feature:
+    system_message_template_path: "templates/improve/system_message.tmpl"
+    user_message_template_path: "templates/improve/user_message.tmpl"
+    temperature: 0.7
+
+  label_feature:
+    system_message_template_path: "templates/label/system_message.tmpl"
+    user_message_template_path: "templates/label/user_message.tmpl"
+    temperature: 0.7

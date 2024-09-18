@@ -42,7 +42,7 @@ impl OpenAiLlm {
 impl Llm for OpenAiLlm {
     async fn complete(
         &self,
-        system_message: &str,
+        system_message: &NonEmptyString,
         chat: Vec<ChatMessage>,
         params: &CompletionParameters,
     ) -> Result<AiMessage> {

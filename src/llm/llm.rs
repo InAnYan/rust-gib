@@ -1,4 +1,5 @@
 use async_trait::async_trait;
+use non_empty_string::NonEmptyString;
 use smart_default::SmartDefault;
 
 use super::{
@@ -16,7 +17,7 @@ pub struct CompletionParameters {
 pub trait Llm {
     async fn complete(
         &self,
-        system_message: &str, // NOTE: Using impl AsRef<str> introduces too much problems.
+        system_message: &NonEmptyString, // NOTE: Using impl AsRef<str> introduces too much problems.
         chat: Vec<ChatMessage>,
         params: &CompletionParameters,
     ) -> Result<AiMessage>;

@@ -2,6 +2,7 @@ use std::sync::Arc;
 
 use nonempty::NonEmpty;
 use tokio::sync::Mutex;
+use tracing::instrument;
 
 use crate::{
     features::feature_type::GitBotFeature,
@@ -23,6 +24,7 @@ impl GitBot {
         Self { host, features }
     }
 
+    #[instrument(skip(self))]
     pub async fn process_event(&self, event: &GitEvent) -> Result<()> {
         let mut res = Vec::new();
 

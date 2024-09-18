@@ -1,14 +1,15 @@
 use std::ops::Deref;
 
-use nutype::nutype;
+use derive_more::derive::{AsRef, Deref, From, FromStr, Into};
+use non_empty_string::NonEmptyString;
 
 pub enum ChatMessage {
     UserMessage(UserMessage),
     AiMessage(AiMessage),
 }
 
-impl AsRef<str> for ChatMessage {
-    fn as_ref(&self) -> &str {
+impl AsRef<NonEmptyString> for ChatMessage {
+    fn as_ref(&self) -> &NonEmptyString {
         match self {
             ChatMessage::UserMessage(user_message) => user_message.as_ref(),
             ChatMessage::AiMessage(user_message) => user_message.as_ref(),
@@ -17,7 +18,7 @@ impl AsRef<str> for ChatMessage {
 }
 
 impl Deref for ChatMessage {
-    type Target = str;
+    type Target = NonEmptyString;
 
     fn deref(&self) -> &Self::Target {
         match self {
@@ -27,8 +28,8 @@ impl Deref for ChatMessage {
     }
 }
 
-#[nutype(validate(not_empty), derive(FromStr, AsRef, Deref))]
-pub struct UserMessage(String);
+#[derive(FromStr, AsRef, Deref, Into, From)]
+pub struct UserMessage(NonEmptyString);
 
 impl Into<ChatMessage> for UserMessage {
     fn into(self) -> ChatMessage {
@@ -36,8 +37,8 @@ impl Into<ChatMessage> for UserMessage {
     }
 }
 
-#[nutype(validate(not_empty), derive(FromStr, AsRef, Deref))]
-pub struct AiMessage(String);
+#[derive(FromStr, AsRef, Deref, Into, From)]
+pub struct AiMessage(NonEmptyString);
 
 impl Into<ChatMessage> for AiMessage {
     fn into(self) -> ChatMessage {

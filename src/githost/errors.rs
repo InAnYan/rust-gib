@@ -2,6 +2,9 @@ pub type Result<T> = std::result::Result<T, GitHostError>;
 
 #[derive(Debug, thiserror::Error)]
 pub enum GitHostError {
+    #[error("unable to open secret key file")]
+    SecretKeyFileOpenError(#[source] std::io::Error),
+
     #[error("unable to decode secret key")]
     SecretKeyDecodeError,
 

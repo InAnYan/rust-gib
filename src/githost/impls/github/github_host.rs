@@ -93,6 +93,7 @@ impl GitHost for GitHubHost {
                 .ok_or(GitHostError::ApiResponseInvalidFormatError)?
                 .try_into()
                 .map_err(|_| GitHostError::ApiResponseInvalidFormatError)?,
+            author_user_id: issue.user.id.into(),
         })
     }
 
