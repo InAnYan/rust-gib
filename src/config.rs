@@ -8,6 +8,7 @@ use config::{Environment, File};
 use non_empty_string::NonEmptyString;
 use serde::Deserialize;
 use smart_default::SmartDefault;
+use tracing::instrument;
 use url::Url;
 
 #[derive(SmartDefault, Deserialize)]
@@ -74,6 +75,7 @@ pub enum ConfigError {
 pub type Result<T> = std::result::Result<T, ConfigError>;
 
 impl Config {
+    #[instrument]
     pub fn build() -> Result<Self> {
         let builder = config::Config::builder()
             .add_source(
