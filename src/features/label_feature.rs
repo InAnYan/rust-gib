@@ -1,9 +1,11 @@
-use std::sync::Arc;
+use std::{str::FromStr, sync::Arc};
 
 use async_trait::async_trait;
 use non_empty_string::NonEmptyString;
+use serde::Serialize;
 use tera::{Context, Tera};
 use tokio::sync::Mutex;
+use tracing::error;
 
 use crate::{
     githost::{
@@ -19,12 +21,19 @@ use crate::{
 use super::{
     errors::{GitFeatureError, Result},
     feature_type::GitBotFeature,
+    templates::{AuthorTemplate, IssueTemplate, LabelTemplate},
 };
 
 pub struct GitLabelFeature {
     llm: Arc<Mutex<dyn Llm + Send>>,
     temperature: f32,
     template_engine: Tera,
+}
+
+#[derive(Serialize)]
+struct LabelFeatureTemplate {
+    issue: IssueTemplate,
+    labels: Vec<LabelTemplate>,
 }
 
 impl GitLabelFeature {
@@ -69,9 +78,33 @@ impl GitBotFeature for GitLabelFeature {
 
                 let author = host.lock().await.get_user(issue.author_user_id).await?;
 
+                let template = LabelFeatureTemplate {
+                    issue: IssueTemplate {
+                        number: event.issue_id,
+                        author: AuthorTemplate {
+                            nickname: author.nickname,
+                        },
+                        title: issue.title,
+                        body: issue.body,
+                    },
+
+                    labels: host
+                        .lock()
+                        .await
+                        .get_repo_labels(event.repo_id)
+                        .await?
+                        .into_iter()
+                        .map(|l| LabelTemplate {
+                            name: l.name,
+                            description: l.description,
+                        })
+                        .collect(),
+                };
+
                 let mut context = Context::new();
-                context.insert("body", &issue.body);
-                context.insert("author_nickname", &author.nickname);
+
+                context.insert("issue", &template.issue);
+                context.insert("labels", &template.labels);
 
                 let system_message = self
                     .template_engine
@@ -103,10 +136,20 @@ impl GitBotFeature for GitLabelFeature {
                     .await?;
 
                 if !ai_message.as_str().starts_with("EMPTY") {
-                    host.lock()
-                        .await
-                        .make_comment(event.repo_id, event.issue_id, ai_message.into())
-                        .await?;
+                    for label in ai_message.as_str().split(", ") {
+                        match NonEmptyString::from_str(label) {
+                            Err(e) => {
+                                error!("AI has generated malformed result: {:?}. Skipping.", e);
+                            }
+
+                            Ok(label) => {
+                                host.lock()
+                                    .await
+                                    .assign_label(event.repo_id, event.issue_id, label)
+                                    .await?;
+                            }
+                        }
+                    }
                 }
             }
 

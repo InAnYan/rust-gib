@@ -1,5 +1,9 @@
-Write a message to improve this issue body:
+User {{ issue.author.nickname }} has opened a new issue in our repo.
 
-{{ body }}
+The issue title is:
+{{ issue.title }}
 
-The author nickname is: {{ author_nickname }}
+The body is:
+{{ issue.body }}
+
+Write a message, if the user needs to improve the issue.

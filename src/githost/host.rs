@@ -3,7 +3,7 @@ use non_empty_string::NonEmptyString;
 
 use super::{
     errors::Result,
-    model::{Comment, CommentId, Issue, IssueId, Label, LabelId, Repo, RepoId, User, UserId},
+    model::{Comment, CommentId, Issue, IssueId, Label, Repo, RepoId, User, UserId},
 };
 
 #[async_trait]
@@ -32,10 +32,12 @@ pub trait GitHost {
 
     async fn get_repo_labels(&self, repo_id: RepoId) -> Result<Vec<Label>>;
 
+    // NOTE: It seems GitHub does not support getting information about label through label id. So
+    // I left this API like this (using label name).
     async fn assign_label(
         &self,
         repo_id: RepoId,
         issue_id: IssueId,
-        label_id: LabelId,
+        label_name: NonEmptyString,
     ) -> Result<()>;
 }

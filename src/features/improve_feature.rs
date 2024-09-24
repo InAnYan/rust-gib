@@ -2,6 +2,7 @@ use std::sync::Arc;
 
 use async_trait::async_trait;
 use non_empty_string::NonEmptyString;
+use serde::Serialize;
 use tera::{Context, Tera};
 use tokio::sync::Mutex;
 
@@ -19,12 +20,18 @@ use crate::{
 use super::{
     errors::{GitFeatureError, Result},
     feature_type::GitBotFeature,
+    templates::{AuthorTemplate, IssueTemplate},
 };
 
 pub struct GitImproveFeature {
     llm: Arc<Mutex<dyn Llm + Send>>,
     template_engine: Tera,
     temperature: f32,
+}
+
+#[derive(Serialize)]
+struct ImproveFeatureTemplate {
+    pub issue: IssueTemplate,
 }
 
 impl GitImproveFeature {
@@ -69,9 +76,21 @@ impl GitBotFeature for GitImproveFeature {
 
                 let author = host.lock().await.get_user(issue.author_user_id).await?;
 
+                let template = ImproveFeatureTemplate {
+                    issue: IssueTemplate {
+                        number: event.issue_id,
+                        author: AuthorTemplate {
+                            nickname: author.nickname,
+                        },
+
+                        title: issue.title,
+                        body: issue.body,
+                    },
+                };
+
                 let mut context = Context::new();
-                context.insert("body", &issue.body);
-                context.insert("author_nickname", &author.nickname);
+
+                context.insert("issue", &template.issue);
 
                 let system_message = self
                     .template_engine

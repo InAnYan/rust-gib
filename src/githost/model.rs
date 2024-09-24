@@ -1,5 +1,6 @@
 use derive_more::derive::{AsRef, Deref, From};
 use non_empty_string::NonEmptyString;
+use serde::Serialize;
 
 #[derive(Clone, Copy, From, AsRef, Deref, PartialEq)]
 pub struct UserId(usize);
@@ -18,13 +19,15 @@ pub struct Repo {
     pub name: String,
 }
 
-#[derive(Clone, Copy, From, AsRef, Deref, Debug)]
+#[derive(Serialize, Clone, Copy, From, AsRef, Deref, Debug)]
+#[serde(transparent)]
 pub struct IssueId(usize);
 
 pub struct Issue {
     pub id: IssueId,
     pub author_user_id: UserId,
-    pub body: NonEmptyString,
+    pub title: NonEmptyString,
+    pub body: String,
 }
 
 #[derive(Clone, Copy, From, AsRef, Deref, Debug)]
@@ -36,9 +39,10 @@ pub struct Comment {
     pub body: NonEmptyString,
 }
 
-#[derive(Clone, Copy, From, AsRef, Deref, PartialEq)]
+#[derive(Clone, Copy, From, AsRef, Deref, PartialEq, Serialize)]
 pub struct LabelId(usize);
 
+#[derive(Serialize)]
 pub struct Label {
     pub id: LabelId,
     pub name: NonEmptyString,

@@ -88,6 +88,10 @@ impl GitHost for GitHubHost {
 
         Ok(Issue {
             id: issue_id,
+            title: issue
+                .title
+                .try_into()
+                .map_err(|_| GitHostError::ApiResponseInvalidFormatError)?,
             body: issue
                 .body
                 .ok_or(GitHostError::ApiResponseInvalidFormatError)?
@@ -176,20 +180,11 @@ impl GitHost for GitHubHost {
         &self,
         repo_id: RepoId,
         issue_id: IssueId,
-        label_id: LabelId,
+        label_name: NonEmptyString,
     ) -> Result<()> {
-        let labels = self.get_repo_labels(repo_id).await?;
-
-        // TODO: It seems GitHub does not support getting information about label through label id.
-
-        let label = labels
-            .into_iter()
-            .find(|l| l.id == label_id)
-            .ok_or(GitHostError::ApiResponseInvalidFormatError)?;
-
         self.octocrab
             .issues_by_id(octocrab::models::RepositoryId::from(*repo_id as u64))
-            .add_labels(*issue_id as u64, &[label.name.into()])
+            .add_labels(*issue_id as u64, &[label_name.into()])
             .await
             .map_err(|_| GitHostError::GitHostRequestError)?;
 
