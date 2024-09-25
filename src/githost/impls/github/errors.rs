@@ -1,21 +1,22 @@
-pub type Result<T> = std::result::Result<T, GitHostError>;
-
 #[derive(Debug, thiserror::Error)]
-pub enum GitHostError {
+pub enum GithubError {
     #[error("unable to open secret key file")]
     SecretKeyFileOpenError(#[source] std::io::Error),
 
     #[error("unable to decode secret key")]
-    SecretKeyDecodeError,
+    SecretKeyDecodeError(#[from] jsonwebtoken::errors::Error),
+
+    #[error("error in the underlying implementation crate")]
+    ImplementationError(#[from] octocrab::Error),
 
     #[error("cannot access Git host API or wrong request")]
     GitHostRequestError,
 
     #[error("unable to bind webhook server to the supplied address")]
-    WebhookServerBindError,
+    WebhookServerBindError(#[source] std::io::Error),
 
-    #[error("internal server error for webhooks")]
-    WebhookServerError,
+    #[error("internal server error of webhook server")]
+    WebhookServerError(#[source] std::io::Error),
 
     #[error("invalid format of the API response")]
     ApiResponseInvalidFormatError,
@@ -23,3 +24,5 @@ pub enum GitHostError {
     #[error("unknown error")]
     UnknownError,
 }
+
+pub type Result<T> = std::result::Result<T, GithubError>;

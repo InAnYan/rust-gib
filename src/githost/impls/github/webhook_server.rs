@@ -1,5 +1,3 @@
-use std::net::IpAddr;
-
 use axum::{body::Bytes, extract::State, http::header::HeaderMap, routing::post, serve, Router};
 use log::{error, info};
 use octocrab::models::{
@@ -15,21 +13,26 @@ use octocrab::models::{
 use tokio::{net::TcpListener, sync::mpsc::Sender};
 use tower_http::trace::TraceLayer;
 
-use crate::githost::{
-    errors::{GitHostError, Result},
-    events::{GitEvent, GitEventKind},
+use crate::{
+    config::WebhookServerConfig,
+    githost::events::{GitEvent, GitEventKind},
 };
 
-pub async fn listen_to_events(sender: Sender<GitEvent>, addr: IpAddr, port: u16) -> Result<()> {
+use super::errors::GithubError;
+
+pub async fn listen_to_events(
+    sender: Sender<GitEvent>,
+    config: WebhookServerConfig,
+) -> Result<(), GithubError> {
     let app = create_routes(sender);
 
-    let listener = TcpListener::bind((addr, port))
+    let listener = TcpListener::bind((config.addr, config.port))
         .await
-        .map_err(|_| GitHostError::WebhookServerBindError)?;
+        .map_err(GithubError::WebhookServerBindError)?;
 
     serve(listener, app.into_make_service())
         .await
-        .map_err(|_| GitHostError::WebhookServerError)?;
+        .map_err(GithubError::WebhookServerError)?;
 
     Ok(())
 }

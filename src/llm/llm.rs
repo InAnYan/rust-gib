@@ -2,10 +2,7 @@ use async_trait::async_trait;
 use non_empty_string::NonEmptyString;
 use smart_default::SmartDefault;
 
-use super::{
-    errors::Result,
-    messages::{AiMessage, ChatMessage},
-};
+use super::messages::{AiMessage, ChatMessage};
 
 #[derive(SmartDefault)]
 pub struct CompletionParameters {
@@ -15,10 +12,12 @@ pub struct CompletionParameters {
 
 #[async_trait]
 pub trait Llm {
+    type Error;
+
     async fn complete(
         &self,
         system_message: &NonEmptyString, // NOTE: Using impl AsRef<str> introduces too much problems.
         chat: Vec<ChatMessage>,
         params: &CompletionParameters,
-    ) -> Result<AiMessage>;
+    ) -> Result<AiMessage, Self::Error>;
 }

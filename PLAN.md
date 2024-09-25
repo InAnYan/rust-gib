@@ -98,3 +98,6 @@ Need to think more. But probably something that uses vector search for questions
 
 Also need to think of a way to supply FAQs...
 
+
+
+MAYBE: Let bot comment on every push in pull request and look at the file difference, then make a comment describing those differences.

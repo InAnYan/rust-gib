@@ -1,102 +1,111 @@
+use std::path::PathBuf;
+
 use async_trait::async_trait;
 use jsonwebtoken::EncodingKey;
 use non_empty_string::NonEmptyString;
-use octocrab::{models::InstallationId, Octocrab, OctocrabBuilder};
-use secrecy::{ExposeSecret, SecretVec};
+use octocrab::{Octocrab, OctocrabBuilder};
+use serde::Deserialize;
+use tokio::fs::read;
 
 use crate::githost::{
-    errors::{GitHostError, Result},
     host::GitHost,
     model::{Comment, CommentId, Issue, IssueId, Label, LabelId, Repo, RepoId, User, UserId},
 };
 
-pub struct GitHubHost {
-    octocrab: Octocrab,
-    name: NonEmptyString,
+use super::errors::GithubError;
+
+#[derive(Deserialize)]
+pub struct GithubConfig {
+    pub bot_name: NonEmptyString,
+    pub app_id: u64,
+    pub installation_id: u64,
+    pub pem_rsa_key_path: PathBuf,
 }
 
-impl GitHubHost {
-    pub fn build(
-        name: NonEmptyString,
-        app_id: u64,
-        installation_id: u64,
-        key_pem_rsa: SecretVec<u8>,
-    ) -> Result<Self> {
+#[derive(Clone)]
+pub struct GithubHost {
+    octocrab: Octocrab,
+    bot_name: NonEmptyString,
+}
+
+impl GithubHost {
+    pub async fn build(config: GithubConfig) -> Result<Self, GithubError> {
         let octocrab = OctocrabBuilder::new()
             .app(
-                app_id.into(),
-                EncodingKey::from_rsa_pem(key_pem_rsa.expose_secret().as_slice())
-                    .map_err(|_| GitHostError::SecretKeyDecodeError)?,
+                config.app_id.into(),
+                EncodingKey::from_rsa_pem(
+                    read(config.pem_rsa_key_path)
+                        .await
+                        .map_err(GithubError::SecretKeyFileOpenError)?
+                        .as_slice(),
+                )?,
             )
-            .build()
-            .map_err(|_| GitHostError::UnknownError)?;
+            .build()?;
 
-        let octocrab = octocrab.installation(InstallationId::from(installation_id));
+        let octocrab = octocrab.installation(config.installation_id.into());
 
-        Ok(Self { octocrab, name })
+        Ok(Self {
+            octocrab,
+            bot_name: config.bot_name,
+        })
     }
 }
 
 #[async_trait]
-impl GitHost for GitHubHost {
+impl GitHost for GithubHost {
+    type Error = GithubError;
+
     fn get_self_name(&self) -> &NonEmptyString {
-        &self.name
+        &self.bot_name
     }
 
-    async fn get_user(&self, id: UserId) -> Result<User> {
+    async fn get_user(&self, id: UserId) -> Result<User, Self::Error> {
         let profile = self
             .octocrab
             .users_by_id(octocrab::models::UserId::from(*id as u64))
             .profile()
-            .await
-            .map_err(|_| GitHostError::GitHostRequestError)?;
+            .await?;
 
         Ok(User {
             id,
             nickname: profile
                 .login
                 .try_into()
-                .map_err(|_| GitHostError::ApiResponseInvalidFormatError)?,
+                .map_err(|_| GithubError::ApiResponseInvalidFormatError)?,
         })
     }
 
-    async fn get_repo(&self, id: RepoId) -> Result<Repo> {
+    async fn get_repo(&self, id: RepoId) -> Result<Repo, Self::Error> {
         let repo = self
             .octocrab
             .repos_by_id(octocrab::models::RepositoryId::from(*id as u64))
             .get()
-            .await
-            .map_err(|_| GitHostError::GitHostRequestError)?;
+            .await?;
 
         Ok(Repo {
             id,
             owner: repo
                 .owner
-                .ok_or(GitHostError::ApiResponseInvalidFormatError)?
+                .ok_or(GithubError::ApiResponseInvalidFormatError)?
                 .login,
             name: repo.name,
         })
     }
 
-    async fn get_issue(&self, repo_id: RepoId, issue_id: IssueId) -> Result<Issue> {
+    async fn get_issue(&self, repo_id: RepoId, issue_id: IssueId) -> Result<Issue, Self::Error> {
         let issue = self
             .octocrab
             .issues_by_id(octocrab::models::RepositoryId::from(*repo_id as u64))
             .get(*issue_id as u64)
-            .await
-            .map_err(|_| GitHostError::GitHostRequestError)?;
+            .await?;
 
         Ok(Issue {
             id: issue_id,
             title: issue
                 .title
                 .try_into()
-                .map_err(|_| GitHostError::ApiResponseInvalidFormatError)?,
-            body: issue
-                .body
-                .ok_or(GitHostError::ApiResponseInvalidFormatError)?
-                .try_into()
-                .map_err(|_| GitHostError::ApiResponseInvalidFormatError)?,
+                .map_err(|_| GithubError::ApiResponseInvalidFormatError)?,
+            body: issue.body.unwrap_or(String::new()),
             author_user_id: issue.user.id.into(),
         })
     }
@@ -106,22 +115,21 @@ impl GitHost for GitHubHost {
         repo_id: RepoId,
         _issue_id: IssueId,
         comment_id: CommentId,
-    ) -> Result<Comment> {
+    ) -> Result<Comment, Self::Error> {
         let comment = self
             .octocrab
             .issues_by_id(octocrab::models::RepositoryId::from(*repo_id as u64))
             .get_comment(octocrab::models::CommentId::from(*comment_id as u64))
-            .await
-            .map_err(|_| GitHostError::GitHostRequestError)?;
+            .await?;
 
         Ok(Comment {
             id: comment_id,
             user_id: UserId::from(*comment.user.id as usize),
             body: comment
                 .body
-                .ok_or(GitHostError::ApiResponseInvalidFormatError)?
+                .ok_or(GithubError::ApiResponseInvalidFormatError)?
                 .try_into()
-                .map_err(|_| GitHostError::ApiResponseInvalidFormatError)?,
+                .map_err(|_| GithubError::ApiResponseInvalidFormatError)?,
         })
     }
 
@@ -130,24 +138,22 @@ impl GitHost for GitHubHost {
         repo_id: RepoId,
         issue_id: IssueId,
         message: NonEmptyString,
-    ) -> Result<()> {
+    ) -> Result<(), Self::Error> {
         self.octocrab
             .issues_by_id(octocrab::models::RepositoryId::from(*repo_id as u64))
             .create_comment(*issue_id as u64, message)
-            .await
-            .map_err(|_| GitHostError::GitHostRequestError)?;
+            .await?;
 
         Ok(())
     }
 
-    async fn get_repo_labels(&self, repo_id: RepoId) -> Result<Vec<Label>> {
+    async fn get_repo_labels(&self, repo_id: RepoId) -> Result<Vec<Label>, Self::Error> {
         let labels_numbers = self
             .octocrab
             .issues_by_id(octocrab::models::RepositoryId::from(*repo_id as u64))
             .list_labels_for_repo()
             .send()
-            .await
-            .map_err(|_| GitHostError::GitHostRequestError)?;
+            .await?;
 
         let mut labels = Vec::new();
 
@@ -158,8 +164,7 @@ impl GitHost for GitHubHost {
                 .list_labels_for_repo()
                 .page(i)
                 .send()
-                .await
-                .map_err(|_| GitHostError::GitHostRequestError)?;
+                .await?;
 
             for label in labels_page.into_iter() {
                 labels.push(Label {
@@ -167,7 +172,7 @@ impl GitHost for GitHubHost {
                     name: label
                         .name
                         .try_into()
-                        .map_err(|_| GitHostError::ApiResponseInvalidFormatError)?,
+                        .map_err(|_| GithubError::ApiResponseInvalidFormatError)?,
                     description: label.description.unwrap_or("".into()),
                 });
             }
@@ -181,12 +186,11 @@ impl GitHost for GitHubHost {
         repo_id: RepoId,
         issue_id: IssueId,
         label_name: NonEmptyString,
-    ) -> Result<()> {
+    ) -> Result<(), Self::Error> {
         self.octocrab
             .issues_by_id(octocrab::models::RepositoryId::from(*repo_id as u64))
             .add_labels(*issue_id as u64, &[label_name.into()])
-            .await
-            .map_err(|_| GitHostError::GitHostRequestError)?;
+            .await?;
 
         Ok(())
     }

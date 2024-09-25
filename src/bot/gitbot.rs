@@ -1,49 +1,76 @@
-use std::sync::Arc;
-
-use nonempty::NonEmpty;
-use tokio::sync::Mutex;
+use serde::Deserialize;
 use tracing::instrument;
 
 use crate::{
-    features::feature_type::GitBotFeature,
     githost::{events::GitEvent, host::GitHost},
+    llm::llm::Llm,
 };
 
-use super::errors::{GitBotError, Result};
+use super::features::{
+    improve_feature::{ImproveFeature, ImproveFeatureConfig, ImproveFeatureError},
+    label_feature::{LabelFeature, LabelFeatureConfig, LabelFeatureError},
+};
 
-pub struct GitBot {
-    host: Arc<Mutex<dyn GitHost + Send + Sync>>,
-    features: NonEmpty<Arc<Mutex<dyn GitBotFeature + Send>>>,
+#[derive(Debug, thiserror::Error)]
+pub enum GitBotError<GE, LE> {
+    #[error("issue-improve feature returned an error")]
+    ImproveFeatureError(#[from] ImproveFeatureError<GE, LE>),
+
+    #[error("issue-label feature returned an error")]
+    LabelFeatureError(#[from] LabelFeatureError<GE, LE>),
 }
 
-impl GitBot {
-    pub fn new(
-        host: Arc<Mutex<dyn GitHost + Send + Sync>>,
-        features: NonEmpty<Arc<Mutex<dyn GitBotFeature + Send>>>,
-    ) -> Self {
-        Self { host, features }
+pub type Result<T, GE, LE> = std::result::Result<T, GitBotError<GE, LE>>;
+
+#[derive(Deserialize)]
+pub struct GitBotConfig {
+    features: FeaturesConfig,
+}
+
+#[derive(Deserialize)]
+pub struct FeaturesConfig {
+    pub improve_feature: Option<ImproveFeatureConfig>,
+    pub label_feature: Option<LabelFeatureConfig>,
+}
+
+pub struct GitBot<G, L> {
+    improve_feature: Option<ImproveFeature<G, L>>,
+    label_feature: Option<LabelFeature<G, L>>,
+}
+
+impl<G: GitHost + Clone, L: Llm + Clone> GitBot<G, L> {
+    pub async fn build(
+        config: GitBotConfig,
+        githost: G,
+        llm: L,
+    ) -> Result<Self, G::Error, L::Error> {
+        Ok(Self {
+            improve_feature: match config.features.improve_feature {
+                Some(config) => {
+                    Some(ImproveFeature::build(config, githost.clone(), llm.clone()).await?)
+                }
+                None => None,
+            },
+
+            label_feature: match config.features.label_feature {
+                Some(config) => {
+                    Some(LabelFeature::build(config, githost.clone(), llm.clone()).await?)
+                }
+                None => None,
+            },
+        })
     }
 
     #[instrument(skip(self))]
-    pub async fn process_event(&self, event: &GitEvent) -> Result<()> {
-        let mut res = Vec::new();
-
-        for feature in self.features.iter() {
-            match feature
-                .lock()
-                .await
-                .process_event(event, self.host.clone())
-                .await
-            {
-                Ok(()) => {}
-                Err(e) => res.push((feature.lock().await.get_name(), e)),
-            }
+    pub async fn process_event(&self, event: &GitEvent) -> Result<(), G::Error, L::Error> {
+        if let Some(improve_feature) = &self.improve_feature {
+            improve_feature.process_event(event).await?;
         }
 
-        if res.is_empty() {
-            Ok(())
-        } else {
-            Err(GitBotError::FeaturesError(res))
+        if let Some(label_feature) = &self.label_feature {
+            label_feature.process_event(event).await?;
         }
+
+        Ok(())
     }
 }
