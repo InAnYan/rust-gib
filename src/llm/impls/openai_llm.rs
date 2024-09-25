@@ -36,7 +36,7 @@ pub enum OpenAiLlmError {
 pub struct OpenAiLlmConfig {
     pub api_base_url: Url,
     pub model_name: NonEmptyString,
-    pub api_key_env_var_name: NonEmptyString,
+    pub api_key_env_var: NonEmptyString,
 }
 
 #[derive(Clone)]
@@ -47,8 +47,8 @@ pub struct OpenAiLlm {
 
 impl OpenAiLlm {
     pub fn build(config: OpenAiLlmConfig) -> Result<Self, OpenAiLlmError> {
-        let api_key = std::env::var(config.api_key_env_var_name.as_str())
-            .map_err(OpenAiLlmError::ApiKeyNotSet)?;
+        let api_key =
+            std::env::var(config.api_key_env_var.as_str()).map_err(OpenAiLlmError::ApiKeyNotSet)?;
 
         let client = Client::with_config(
             OpenAIConfig::new()
