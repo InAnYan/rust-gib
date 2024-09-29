@@ -1,0 +1,12 @@
+# GitHub unauthorized excpetion
+
+HellO! Wanted to run your bot! However, I'm getting "unauthorized" error in the logs? I have supplied the App id and private token.
+
+I'm running the development branch on Linux. The logs are:
+```
+00.00.00: main.rs: Starting up.
+00.00.01: main.rs: Connecting to GitHub...
+00.00.02: main.rs: Connecting to OpenAI...
+00.00.03: github.rs: Error: UNAUTHORIZED.
+00.00.04: main.rs: Exiting...
+`

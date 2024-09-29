@@ -1,0 +1,9 @@
+# Bot can't find my templates
+
+```
+Error: GitBotError(ImproveFeatureError(LlmAgentError(TemplateEngineError(Error { kind: Msg("Couldn't open template '\"templates/improve/system_message.tmpl\"'"), source: Some(Os { code: 2, kind: NotFound, message: "No such file or directory" }) }))))
+```
+
+Running the development build on Linux with Rust 1.80.0.
+
+There were no logs.

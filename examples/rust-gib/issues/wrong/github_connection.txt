@@ -1,0 +1,3 @@
+# GitHub unauthorized excpetion
+
+HellO! Wanted to run your bot! However, I'm getting "unauthorized" error in the logs? I have supplied the App id and private token.
