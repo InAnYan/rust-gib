@@ -39,7 +39,7 @@ pub async fn listen_to_events(
 
 fn create_routes(sender: Sender<GitEvent>) -> Router {
     Router::new()
-        .route("/webhook", post(webhook))
+        .route("/", post(webhook))
         .with_state(sender)
         .layer(TraceLayer::new_for_http())
 }

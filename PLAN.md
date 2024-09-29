@@ -101,3 +101,5 @@ Also need to think of a way to supply FAQs...
 
 
 MAYBE: Let bot comment on every push in pull request and look at the file difference, then make a comment describing those differences.
+
+ALSO: PERFORM A CHECK ON ISSUE. IF UESR USED AN OLD VERSION OF RUST, then say it's not supported. Or if windows is not supported, you should close issue automatically.
