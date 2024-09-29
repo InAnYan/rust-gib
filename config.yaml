@@ -18,11 +18,15 @@ llm:
 bot:
   features:
     improve_feature:
-      system_message_template_path: "templates/improve/system_message.tmpl"
-      user_message_template_path: "templates/improve/user_message.tmpl"
-      temperature: 0.7
+      agent:
+        system_message_template_path: "templates/improve/system_message.tmpl"
+        user_message_template_path: "templates/improve/user_message.tmpl"
+        completion_params:
+          temperature: 0.7
 
     label_feature:
-      system_message_template_path: "templates/label/system_message.tmpl"
-      user_message_template_path: "templates/label/user_message.tmpl"
-      temperature: 0.7
+      agent:
+        system_message_template_path: "templates/label/system_message.tmpl"
+        user_message_template_path: "templates/label/user_message.tmpl"
+        completion_params:
+          temperature: 0.7

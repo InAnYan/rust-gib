@@ -1,14 +1,16 @@
 use std::{env::VarError, fmt::Debug};
 
 use gib::{
-    bot::gitbot::{GitBot, GitBotError},
+    bot::{errors::GitBotError, gitbot::GitBot},
     config::{Config, ConfigError, GitHostChoice, LlmChoice},
     githost::{
         events::GitEvent,
         impls::github::{self, errors::GithubError, github_host::GithubHost},
     },
     llm::impls::openai_llm::{OpenAiLlm, OpenAiLlmError},
+    utils::display::display_error,
 };
+use log::error;
 use tokio::{
     sync::mpsc::{channel, Receiver, Sender},
     task::{JoinError, JoinHandle},
@@ -83,7 +85,11 @@ async fn main() -> Result<(), GithubError, OpenAiLlmError> {
             std::result::Result<(), GitBotError<GithubError, OpenAiLlmError>>,
         > = tokio::spawn(async move {
             while let Some(event) = events_receive.recv().await {
-                bot.process_event(&event).await?;
+                let res = bot.process_event(&event).await;
+
+                if let Err(e) = res {
+                    error!("{}", display_error(e));
+                }
             }
 
             Ok(())
