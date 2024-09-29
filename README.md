@@ -5,6 +5,7 @@
 Git Intellectual Bot (GIB) is an intelligent bot designed to manage user issues in Git repositories, streamlining the development workflow through automation.
 
 ### Key Features:
+
 - **Issue Analysis**: GIB reads newly opened issues and asks clarifying questions to improve the quality and completeness of the report.
 - **Automatic Labeling**: GIB analyzes the issue content and assigns relevant labels automatically to categorize the issues.
 
@@ -16,15 +17,27 @@ This project is part of the capstone for the Ukrainian Summer Rustcamp 2024, sho
 
 ### Step 1: Create a GitHub App
 
-Follow the [official GitHub documentation](https://docs.github.com/en/apps/creating-github-apps/registering-a-github-app/registering-a-github-app) to create a GitHub app.
+We will list all the necessary steps as of 30.09.2024, but you can also follow the [official GitHub documentation](https://docs.github.com/en/apps/creating-github-apps/registering-a-github-app/registering-a-github-app) to create a GitHub app:
+
+1. Create and log in to your GitHub account.
+2. Start creating a new app using https://github.com/settings/apps/new.
+3. Set up the webhook URL
 
 GIB listens for new events in your repository via webhooks, which enable GitHub to send events to your server. You will need to set up a webhook server for this functionality.
 
 While GIB handles the webhook server logic internally, you need to make your server accessible to GitHub. You have two options:
-1. **Public IP**: If you have a server with a public IP, you’re all set. (Note: Public IP addresses are usually provided by your Internet Service Provider, and may require payment.)
-2. **Tunneling Services**: Alternatively, you can use services like [`ngrok`](https://ngrok.com/) or [`localtunnel`](https://theboroer.github.io/localtunnel-www/) to create a tunnel to your local server. Follow their respective setup guides to generate the URL and port required.
 
-Once you have your webhook URL, enter it in the "Webhook" section of your GitHub App's settings during the app creation process.
+- **Public IP**: If you have a server with a public IP, you’re all set. (Note: Public IP addresses are usually provided by your Internet Service Provider, and may require payment.)
+- **Tunneling Services**: Alternatively, you can use services like [`ngrok`](https://ngrok.com/) or [`localtunnel`](https://theboroer.github.io/localtunnel-www/) to create a tunnel to your local server. Follow their respective setup guides to generate the URL and port required.
+
+4. Once you have your webhook URL, enter it in the "Webhook URL" field in the app creation form.
+
+5. Now be careful, as you need to setup proper permissions for the bot. The permissions should be set up like this:
+
+- "Repository permissions" -> "Metadata" -> "Read-only".
+- "Repository permissions" -> "Issues" -> "Read and write".
+
+6. Click "Create GitHub app".
 
 Make sure to save the **App ID** and download the private key after creating the app.
 
@@ -36,7 +49,15 @@ Once installed, navigate to your GitHub settings page to retrieve the **Installa
 
 ### Step 3: Get an OpenAI API Key
 
-Follow [this tutorial](https://medium.com/@lorenzozar/how-to-get-your-own-openai-api-key-f4d44e60c327) to obtain an OpenAI API key, which will be required for GIB's language model functionality.
+Follow [this tutorial](https://medium.com/@lorenzozar/how-to-get-your-own-openai-api-key-f4d44e60c327) to obtain an OpenAI API key, which will be required for GIB's LLM service, or perform these steps:
+
+1. Log in or create an account on the OpenAI website
+2. Go to the "API" section
+3. Go to the "Dashboard" (upper-right corner)
+4. Go to the "API keys" (left menu)
+5. Click "Create new secret key"
+6. Click "Create secret key"
+7. OpenAI will display the key
 
 ### Step 4: Configure GIB
 
