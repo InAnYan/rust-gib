@@ -7,7 +7,7 @@ use crate::{
     },
     llm::{
         agent::{LlmAgent, LlmAgentConfig, LlmAgentError},
-        llm::Llm,
+        llm_trait::Llm,
     },
 };
 use log::error;
@@ -59,51 +59,47 @@ impl<G: GitHost, L: Llm> LabelFeature<G, L> {
     }
 
     pub async fn process_event(&self, event: &GitEvent) -> Result<(), G::Error, L::Error> {
-        match event.kind {
-            GitEventKind::NewIssue => {
-                let issue = self
-                    .githost
-                    .get_issue(event.repo_id, event.issue_id)
-                    .await?;
+        if let GitEventKind::NewIssue = event.kind {
+            let issue = self
+                .githost
+                .get_issue(event.repo_id, event.issue_id)
+                .await?;
 
-                let author = self.githost.get_user(issue.author_user_id).await?;
+            let author = self.githost.get_user(issue.author_user_id).await?;
 
-                let context = LabelFeatureContext {
-                    issue: IssueTemplate {
-                        number: event.issue_id,
-                        author: AuthorTemplate {
-                            nickname: author.nickname,
-                        },
-
-                        title: issue.title,
-                        body: issue.body,
+            let context = LabelFeatureContext {
+                issue: IssueTemplate {
+                    number: event.issue_id,
+                    author: AuthorTemplate {
+                        nickname: author.nickname,
                     },
-                };
 
-                let ai_message = self
-                    .agent
-                    .process(&context)
-                    .await
-                    .map_err(LabelFeatureError::LlmAgentError)?;
+                    title: issue.title,
+                    body: issue.body,
+                },
+            };
 
-                if !ai_message.as_str().starts_with("EMPTY") {
-                    for label in ai_message.as_str().split(", ") {
-                        match NonEmptyString::from_str(label) {
-                            Err(e) => {
-                                error!("AI has generated malformed result: {:?}. Skipping.", e);
-                            }
+            let ai_message = self
+                .agent
+                .process(&context)
+                .await
+                .map_err(LabelFeatureError::LlmAgentError)?;
 
-                            Ok(label) => {
-                                self.githost
-                                    .assign_label(event.repo_id, event.issue_id, label)
-                                    .await?;
-                            }
+            if !ai_message.as_str().starts_with("EMPTY") {
+                for label in ai_message.as_str().split(", ") {
+                    match NonEmptyString::from_str(label) {
+                        Err(e) => {
+                            error!("AI has generated malformed result: {:?}. Skipping.", e);
+                        }
+
+                        Ok(label) => {
+                            self.githost
+                                .assign_label(event.repo_id, event.issue_id, label)
+                                .await?;
                         }
                     }
                 }
             }
-
-            _ => {}
         }
 
         Ok(())

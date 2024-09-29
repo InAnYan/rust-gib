@@ -5,7 +5,7 @@ use crate::{
     },
     llm::{
         agent::{LlmAgent, LlmAgentConfig, LlmAgentError},
-        llm::Llm,
+        llm_trait::Llm,
     },
 };
 use serde::{Deserialize, Serialize};
@@ -55,41 +55,37 @@ impl<G: GitHost, L: Llm> ImproveFeature<G, L> {
     }
 
     pub async fn process_event(&self, event: &GitEvent) -> Result<(), G::Error, L::Error> {
-        match event.kind {
-            GitEventKind::NewIssue => {
-                let issue = self
-                    .githost
-                    .get_issue(event.repo_id, event.issue_id)
-                    .await?;
+        if let GitEventKind::NewIssue = event.kind {
+            let issue = self
+                .githost
+                .get_issue(event.repo_id, event.issue_id)
+                .await?;
 
-                let author = self.githost.get_user(issue.author_user_id).await?;
+            let author = self.githost.get_user(issue.author_user_id).await?;
 
-                let context = ImproveFeatureContext {
-                    issue: IssueTemplate {
-                        number: event.issue_id,
-                        author: AuthorTemplate {
-                            nickname: author.nickname,
-                        },
-
-                        title: issue.title,
-                        body: issue.body,
+            let context = ImproveFeatureContext {
+                issue: IssueTemplate {
+                    number: event.issue_id,
+                    author: AuthorTemplate {
+                        nickname: author.nickname,
                     },
-                };
 
-                let ai_message = self
-                    .agent
-                    .process(&context)
-                    .await
-                    .map_err(ImproveFeatureError::LlmAgentError)?;
+                    title: issue.title,
+                    body: issue.body,
+                },
+            };
 
-                if !ai_message.as_str().starts_with("EMPTY") {
-                    self.githost
-                        .make_comment(event.repo_id, event.issue_id, ai_message.into())
-                        .await?;
-                }
+            let ai_message = self
+                .agent
+                .process(&context)
+                .await
+                .map_err(ImproveFeatureError::LlmAgentError)?;
+
+            if !ai_message.as_str().starts_with("EMPTY") {
+                self.githost
+                    .make_comment(event.repo_id, event.issue_id, ai_message)
+                    .await?;
             }
-
-            _ => {}
         }
 
         Ok(())

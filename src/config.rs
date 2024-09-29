@@ -33,8 +33,8 @@ pub enum LlmChoice {
     OpenAi(OpenAiLlmConfig),
 }
 
-const BOT_CONFIG_FILE: &'static str = "config.yaml";
-const BOT_CONFIG_PREFIX: &'static str = "GIB";
+const BOT_CONFIG_FILE: &str = "config.yaml";
+const BOT_CONFIG_PREFIX: &str = "GIB";
 
 #[derive(Debug, thiserror::Error)]
 pub enum ConfigError {
@@ -50,7 +50,7 @@ impl Config {
     pub fn build() -> Result<Self, ConfigError> {
         let builder = config::Config::builder()
             .add_source(File::with_name(
-                &std::env::var(&format!("{}_CONFIG_FILE", BOT_CONFIG_PREFIX))
+                &std::env::var(format!("{}_CONFIG_FILE", BOT_CONFIG_PREFIX))
                     .unwrap_or(BOT_CONFIG_FILE.into()),
             ))
             .add_source(Environment::with_prefix(BOT_CONFIG_PREFIX))

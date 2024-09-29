@@ -7,7 +7,7 @@ use super::{
 };
 use crate::{
     githost::{events::GitEvent, host::GitHost},
-    llm::llm::Llm,
+    llm::llm_trait::Llm,
 };
 
 use super::features::{improve_feature::ImproveFeatureConfig, label_feature::LabelFeatureConfig};

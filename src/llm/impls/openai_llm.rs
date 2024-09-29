@@ -16,7 +16,7 @@ use serde::Deserialize;
 use url::Url;
 
 use crate::llm::{
-    llm::{CompletionParameters, Llm},
+    llm_trait::{CompletionParameters, Llm},
     messages::{AiMessage, ChatMessage},
 };
 
@@ -88,7 +88,7 @@ impl Llm for OpenAiLlm {
         Ok(AiMessage::from_str(
             &response
                 .choices
-                .get(0)
+                .first()
                 .ok_or(OpenAiLlmError::FormatError)?
                 .message
                 .content

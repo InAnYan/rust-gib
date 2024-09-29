@@ -8,7 +8,7 @@ use tera::{Context, Tera};
 use tracing::instrument;
 
 use super::{
-    llm::{CompletionParameters, Llm},
+    llm_trait::{CompletionParameters, Llm},
     messages::UserMessage,
 };
 
@@ -40,10 +40,10 @@ pub struct LlmAgent<L, C> {
     _context: PhantomData<C>,
 }
 
-pub const CONTEXT_VAR_NAME: &'static str = "context";
+pub const CONTEXT_VAR_NAME: &str = "context";
 
-const SYSTEM_MESSAGE_TEMPLATE_NAME: &'static str = "system_message";
-const USER_MESSAGE_TEMPLATE_NAME: &'static str = "user_message";
+const SYSTEM_MESSAGE_TEMPLATE_NAME: &str = "system_message";
+const USER_MESSAGE_TEMPLATE_NAME: &str = "user_message";
 
 impl<L: Llm, C: Serialize + Debug> LlmAgent<L, C> {
     pub fn build_from_config(llm: L, config: LlmAgentConfig) -> Result<Self, L::Error> {

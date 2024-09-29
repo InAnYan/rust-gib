@@ -61,7 +61,6 @@ async fn webhook(State(sender): State<Sender<GitEvent>>, headers: HeaderMap, bod
             }
             Err(err) => {
                 error!("Unable to determine GitHub webhook event: {}", err);
-                return;
             }
         }
     }

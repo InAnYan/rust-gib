@@ -31,17 +31,17 @@ impl Deref for ChatMessage {
 #[derive(FromStr, AsRef, Deref, Into, From)]
 pub struct UserMessage(NonEmptyString);
 
-impl Into<ChatMessage> for UserMessage {
-    fn into(self) -> ChatMessage {
-        ChatMessage::UserMessage(self)
+impl From<UserMessage> for ChatMessage {
+    fn from(val: UserMessage) -> Self {
+        ChatMessage::UserMessage(val)
     }
 }
 
 #[derive(FromStr, AsRef, Deref, Into, From)]
 pub struct AiMessage(NonEmptyString);
 
-impl Into<ChatMessage> for AiMessage {
-    fn into(self) -> ChatMessage {
-        ChatMessage::AiMessage(self)
+impl From<AiMessage> for ChatMessage {
+    fn from(val: AiMessage) -> Self {
+        ChatMessage::AiMessage(val)
     }
 }

@@ -3,7 +3,7 @@ use tracing::instrument;
 
 use crate::{
     githost::{events::GitEvent, host::GitHost},
-    llm::llm::Llm,
+    llm::llm_trait::Llm,
 };
 
 use super::{

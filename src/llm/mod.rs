@@ -1,4 +1,4 @@
 pub mod agent;
 pub mod impls;
-pub mod llm;
+pub mod llm_trait;
 pub mod messages;
