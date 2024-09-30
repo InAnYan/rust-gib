@@ -14,7 +14,7 @@ use log::error;
 use non_empty_string::NonEmptyString;
 use serde::{Deserialize, Serialize};
 
-use super::templates::{AuthorTemplate, IssueTemplate};
+use super::templates::{AuthorTemplate, IssueTemplate, LabelTemplate};
 
 #[derive(Debug, thiserror::Error)]
 pub enum LabelFeatureError<GE, LE> {
@@ -40,6 +40,7 @@ pub struct LabelFeature<G, L> {
 #[derive(Serialize, Debug)]
 pub struct LabelFeatureContext {
     pub issue: IssueTemplate,
+    pub labels: Vec<LabelTemplate>,
 }
 
 impl<G: GitHost, L: Llm> LabelFeature<G, L> {
@@ -67,16 +68,11 @@ impl<G: GitHost, L: Llm> LabelFeature<G, L> {
 
             let author = self.githost.get_user(issue.author_user_id).await?;
 
-            let context = LabelFeatureContext {
-                issue: IssueTemplate {
-                    number: event.issue_id,
-                    author: AuthorTemplate {
-                        nickname: author.nickname,
-                    },
+            let labels = self.githost.get_repo_labels(event.repo_id).await?;
 
-                    title: issue.title,
-                    body: issue.body,
-                },
+            let context = LabelFeatureContext {
+                issue: (issue, author).into(),
+                labels: labels.into_iter().map(|l| l.into()).collect(),
             };
 
             let ai_message = self
@@ -114,11 +110,11 @@ mod tests {
     use non_empty_string::NonEmptyString;
 
     use crate::{
-        bot::features::{improve_feature::ImproveFeature, label_feature::LabelFeature},
+        bot::features::label_feature::LabelFeature,
         githost::{
             events::{GitEvent, GitEventKind},
             host::MockGitHost,
-            model::{Issue, IssueId, Label, LabelId, RepoId, User, UserId},
+            model::{Issue, IssueId, RepoId, User, UserId},
         },
         llm::{
             agent::LlmAgent,

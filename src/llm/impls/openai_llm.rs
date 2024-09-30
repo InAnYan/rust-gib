@@ -12,6 +12,7 @@ use async_openai::{
 };
 use async_trait::async_trait;
 use non_empty_string::NonEmptyString;
+use secrecy::{ExposeSecret, SecretString};
 use serde::Deserialize;
 use url::Url;
 
@@ -50,16 +51,30 @@ impl OpenAiLlm {
         let api_key =
             std::env::var(config.api_key_env_var.as_str()).map_err(OpenAiLlmError::ApiKeyNotSet)?;
 
+        Self::build_raw(
+            config.api_base_url,
+            config.model_name,
+            SecretString::new(api_key),
+        )
+    }
+
+    pub fn build_raw(
+        api_base_url: Url,
+        model_name: NonEmptyString,
+        api_key: SecretString,
+    ) -> Result<Self, OpenAiLlmError> {
+        let url: String = api_base_url.into();
+
         let client = Client::with_config(
             OpenAIConfig::new()
-                .with_api_base(config.api_base_url)
-                .with_api_key(api_key),
+                .with_api_base(match url.strip_suffix("/") {
+                    Some(s) => s.to_string(),
+                    None => url,
+                })
+                .with_api_key(api_key.expose_secret()),
         );
 
-        Ok(Self {
-            client,
-            model_name: config.model_name,
-        })
+        Ok(Self { client, model_name })
     }
 }
 
@@ -122,4 +137,76 @@ fn make_system_message(
         .content(content.as_ref())
         .build()?
         .into())
+}
+
+#[cfg(test)]
+mod tests {
+    use std::str::FromStr;
+
+    use non_empty_string::NonEmptyString;
+    use secrecy::SecretString;
+    use serde_json::json;
+    use wiremock::{
+        matchers::{method, path},
+        Mock, MockServer, ResponseTemplate,
+    };
+
+    use crate::llm::{
+        impls::openai_llm::OpenAiLlm,
+        llm_trait::{CompletionParameters, Llm},
+        messages::UserMessage,
+    };
+
+    #[tokio::test]
+    async fn openai_completion() {
+        let mock_server = MockServer::start().await;
+
+        Mock::given(method("POST"))
+            .and(path("/chat/completions"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({
+              "id": "chatcmpl-123",
+              "object": "chat.completion",
+              "created": 1677652288,
+              "model": "eliza",
+              "system_fingerprint": "fp_44709d6fcb",
+              "choices": [{
+                "index": 0,
+                "message": {
+                  "role": "assistant",
+                  "content": "assistant",
+                },
+                "logprobs": null,
+                "finish_reason": "stop"
+              }],
+              "usage": {
+                "prompt_tokens": 9,
+                "completion_tokens": 12,
+                "total_tokens": 21,
+                "completion_tokens_details": {
+                  "reasoning_tokens": 0
+                }
+              }
+            }
+            )))
+            .mount(&mock_server)
+            .await;
+
+        let llm = OpenAiLlm::build_raw(
+            mock_server.uri().as_str().try_into().unwrap(),
+            "eliza".try_into().unwrap(),
+            SecretString::new("42".into()),
+        )
+        .unwrap();
+
+        let response = llm
+            .complete(
+                &NonEmptyString::from_str("system").unwrap(),
+                vec![UserMessage::from_str("user").unwrap().into()],
+                &CompletionParameters { temperature: 1.0 },
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(response.as_str(), "assistant");
+    }
 }

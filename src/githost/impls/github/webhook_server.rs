@@ -182,7 +182,7 @@ mod tests {
 
     use super::create_routes;
 
-    #[test_log::test(tokio::test)]
+    #[tokio::test]
     async fn sends_issue_opened_event() {
         let (mut receiver, server) = make_test_server();
 

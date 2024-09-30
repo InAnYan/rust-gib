@@ -64,15 +64,7 @@ impl<G: GitHost, L: Llm> ImproveFeature<G, L> {
             let author = self.githost.get_user(issue.author_user_id).await?;
 
             let context = ImproveFeatureContext {
-                issue: IssueTemplate {
-                    number: event.issue_id,
-                    author: AuthorTemplate {
-                        nickname: author.nickname,
-                    },
-
-                    title: issue.title,
-                    body: issue.body,
-                },
+                issue: (issue, author).into(),
             };
 
             let ai_message = self
