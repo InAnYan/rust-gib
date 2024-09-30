@@ -91,3 +91,148 @@ impl<G: GitHost, L: Llm> ImproveFeature<G, L> {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use mockall::predicate;
+    use non_empty_string::NonEmptyString;
+
+    use crate::{
+        bot::features::improve_feature::ImproveFeature,
+        githost::{
+            events::{GitEvent, GitEventKind},
+            host::MockGitHost,
+            model::{Issue, IssueId, RepoId, User, UserId},
+        },
+        llm::{
+            agent::LlmAgent,
+            llm_trait::{CompletionParameters, MockLlm},
+            messages::AiMessage,
+        },
+    };
+
+    const TEST_SYSTEM_MESSAGE: &str = "You are a bot that improves user issues on GitHub. When analyzing issues, please check that it mentions OS version and Rust version. If you think that all of this information is provided, then write special word EMPTY";
+    const TEST_USER_MESSAGE: &str = "Here is the issue: {{ context.issue.body }}. Please write a comment to improve it or write EMPTY";
+
+    #[tokio::test]
+    async fn improves_bad_issue() {
+        let (git_event, issue, author) = make_test_data();
+
+        let issue_clone = issue.clone();
+
+        let llm_output: NonEmptyString =
+            "Please state your OS and Rust version".try_into().unwrap();
+
+        let mut githost_mock = MockGitHost::new();
+
+        githost_mock
+            .expect_get_issue()
+            .with(
+                predicate::eq(git_event.repo_id),
+                predicate::eq(git_event.issue_id),
+            )
+            .returning(move |_, _| Ok(issue_clone.clone()));
+
+        githost_mock
+            .expect_make_comment()
+            .with(
+                predicate::eq(git_event.repo_id),
+                predicate::eq(git_event.issue_id),
+                predicate::eq(llm_output.clone()),
+            )
+            .returning(|_, _, _| Ok(()));
+
+        githost_mock
+            .expect_get_user()
+            .with(predicate::eq(issue.author_user_id))
+            .returning(move |_| Ok(author.clone()));
+
+        let mut llm_mock = MockLlm::new();
+
+        llm_mock
+            .expect_complete()
+            .returning(move |_, _, _| Ok(AiMessage::from(llm_output.clone())));
+
+        let feature = ImproveFeature::new(
+            githost_mock,
+            LlmAgent::build_raw(
+                llm_mock,
+                TEST_SYSTEM_MESSAGE.try_into().unwrap(),
+                TEST_USER_MESSAGE.try_into().unwrap(),
+                CompletionParameters::default(),
+            )
+            .unwrap(),
+        );
+
+        feature.process_event(&git_event).await.unwrap();
+    }
+
+    #[tokio::test]
+    async fn doesnt_improve_on_empty() {
+        let (git_event, issue, author) = make_test_data();
+
+        let issue_clone = issue.clone();
+
+        let llm_output: NonEmptyString = "EMPTY".try_into().unwrap();
+
+        let mut githost_mock = MockGitHost::new();
+
+        githost_mock
+            .expect_get_issue()
+            .with(
+                predicate::eq(git_event.repo_id),
+                predicate::eq(git_event.issue_id),
+            )
+            .returning(move |_, _| Ok(issue_clone.clone()));
+
+        githost_mock
+            .expect_get_user()
+            .with(predicate::eq(issue.author_user_id))
+            .returning(move |_| Ok(author.clone()));
+
+        let mut llm_mock = MockLlm::new();
+
+        llm_mock
+            .expect_complete()
+            .returning(move |_, _, _| Ok(AiMessage::from(llm_output.clone())));
+
+        let feature = ImproveFeature::new(
+            githost_mock,
+            LlmAgent::build_raw(
+                llm_mock,
+                TEST_SYSTEM_MESSAGE.try_into().unwrap(),
+                TEST_USER_MESSAGE.try_into().unwrap(),
+                CompletionParameters::default(),
+            )
+            .unwrap(),
+        );
+
+        feature.process_event(&git_event).await.unwrap();
+    }
+
+    fn make_test_data() -> (GitEvent, Issue, User) {
+        let repo_id = RepoId::from(1);
+        let issue_id = IssueId::from(1 as usize);
+        let user_id = UserId::from(1);
+
+        let git_event = GitEvent {
+            repo_id,
+            issue_id,
+            kind: GitEventKind::NewIssue,
+        };
+
+        let issue = Issue {
+            id: issue_id,
+            author_user_id: user_id,
+            title: "Problem with your program".try_into().unwrap(),
+            body: "Hi! I can't run your program".into(),
+        };
+
+        let author = User {
+            id: user_id,
+            nickname: "InAnYan".try_into().unwrap(),
+        };
+
+        (git_event, issue, author)
+    }
+}

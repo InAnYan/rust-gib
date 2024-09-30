@@ -1,8 +1,10 @@
 use async_trait::async_trait;
+use mockall::automock;
 use non_empty_string::NonEmptyString;
 
 use super::model::{Comment, CommentId, Issue, IssueId, Label, Repo, RepoId, User, UserId};
 
+#[automock(type Error=();)]
 #[async_trait]
 pub trait GitHost {
     type Error;

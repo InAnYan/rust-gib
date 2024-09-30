@@ -1,4 +1,5 @@
 use async_trait::async_trait;
+use mockall::automock;
 use non_empty_string::NonEmptyString;
 use serde::{Deserialize, Serialize};
 use smart_default::SmartDefault;
@@ -12,6 +13,7 @@ pub struct CompletionParameters {
     pub temperature: f32,
 }
 
+#[automock(type Error = ();)]
 #[async_trait]
 pub trait Llm {
     type Error;

@@ -35,3 +35,6 @@ config = "0.14.0"
 anyhow = "1.0.89"
 tera = "1.20.0"
 derive_more = { version = "1.0.0", features = ["full"] }
+axum-test = "16.1.0"
+test-log = "0.2.16"
+mockall = "0.13.0"

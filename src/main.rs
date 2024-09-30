@@ -5,7 +5,9 @@ use gib::{
     config::{Config, ConfigError, GitHostChoice, LlmChoice},
     githost::{
         events::GitEvent,
-        impls::github::{self, errors::GithubError, github_host::GithubHost},
+        impls::github::{
+            errors::GithubError, github_host::GithubHost, webhook_server::GithubWebhookServer,
+        },
     },
     llm::impls::openai_llm::{OpenAiLlm, OpenAiLlmError},
     utils::display::display_error,
@@ -76,10 +78,9 @@ async fn main() -> Result<(), GithubError, OpenAiLlmError> {
         channel(GIT_EVENT_CHANNEL_BUFFER_SIZE);
 
     if let Some(webhook_config) = config.webhook_server {
-        let webhook_server_join = tokio::spawn(github::webhook_server::listen_to_events(
-            events_send,
-            webhook_config,
-        ));
+        let webhook_server = GithubWebhookServer::new(events_send, webhook_config);
+
+        let webhook_server_join = tokio::spawn(start_webhook_server(webhook_server));
 
         let bot_join: JoinHandle<
             std::result::Result<(), GitBotError<GithubError, OpenAiLlmError>>,
@@ -103,4 +104,10 @@ async fn main() -> Result<(), GithubError, OpenAiLlmError> {
     } else {
         Err(MainError::NoWebhookConfiguration)
     }
+}
+
+async fn start_webhook_server(
+    webhook_server: GithubWebhookServer,
+) -> std::result::Result<(), GithubError> {
+    webhook_server.serve().await
 }
