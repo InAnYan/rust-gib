@@ -10,7 +10,7 @@ use crate::{
 };
 use serde::{Deserialize, Serialize};
 
-use super::templates::{AuthorTemplate, IssueTemplate};
+use super::templates::IssueTemplate;
 
 #[derive(Debug, thiserror::Error)]
 pub enum ImproveFeatureError<GE, LE> {

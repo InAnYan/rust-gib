@@ -16,9 +16,12 @@ use secrecy::{ExposeSecret, SecretString};
 use serde::Deserialize;
 use url::Url;
 
-use crate::llm::{
-    llm_trait::{CompletionParameters, Llm},
-    messages::{AiMessage, ChatMessage},
+use crate::{
+    llm::{
+        llm_trait::{CompletionParameters, Llm},
+        messages::{AiMessage, ChatMessage},
+    },
+    utils::clear_url::clear_url,
 };
 
 #[derive(Debug, thiserror::Error)]
@@ -63,14 +66,9 @@ impl OpenAiLlm {
         model_name: NonEmptyString,
         api_key: SecretString,
     ) -> Result<Self, OpenAiLlmError> {
-        let url: String = api_base_url.into();
-
         let client = Client::with_config(
             OpenAIConfig::new()
-                .with_api_base(match url.strip_suffix("/") {
-                    Some(s) => s.to_string(),
-                    None => url,
-                })
+                .with_api_base(clear_url(api_base_url))
                 .with_api_key(api_key.expose_secret()),
         );
 

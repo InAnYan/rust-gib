@@ -41,10 +41,10 @@ pub struct Comment {
     pub body: NonEmptyString,
 }
 
-#[derive(Clone, Copy, From, AsRef, Deref, PartialEq, Serialize)]
+#[derive(Clone, Copy, From, AsRef, Deref, PartialEq, Serialize, Debug)]
 pub struct LabelId(usize);
 
-#[derive(Serialize)]
+#[derive(Serialize, Debug, PartialEq)]
 pub struct Label {
     pub id: LabelId,
     pub name: NonEmptyString,

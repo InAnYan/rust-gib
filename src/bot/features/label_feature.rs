@@ -14,7 +14,7 @@ use log::error;
 use non_empty_string::NonEmptyString;
 use serde::{Deserialize, Serialize};
 
-use super::templates::{AuthorTemplate, IssueTemplate, LabelTemplate};
+use super::templates::{IssueTemplate, LabelTemplate};
 
 #[derive(Debug, thiserror::Error)]
 pub enum LabelFeatureError<GE, LE> {
