@@ -1,0 +1,22 @@
+# Bot sends wrong messages
+
+Hello! I regret to say that your bot is working not very good...
+
+We used it on our repo and it gave strange results. For good issues, it wrote unnecessary comments, for wrongly formulated ones - it wrote absurd comments.
+
+We used the latest realease build on your bot, and we are running it on Linux. The GitHub connection seems to be good, and well, the LLM connection is set up, but the results are disappointing.
+
+Take for example this issue:
+
+```
+I can't run your program on Mac.
+```
+
+It gave this comment:
+```
+Please, write the version of your OS.
+```
+
+We actually expected that bot told the user, that our app doesn't suport Mac OS.
+
+We are considering to switching to alternatives...

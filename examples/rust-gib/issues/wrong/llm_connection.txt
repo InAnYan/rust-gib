@@ -1,0 +1,3 @@
+# Bot starts, but shutdowns when a new issue opened.
+
+WTF. It like works in the beginning, but then no. I have set up the GitHub connection properly, and my config file is good. I also wrote good prompts for my repo...

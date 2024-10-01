@@ -1,0 +1,32 @@
+githost:
+  github:
+    bot_name: "intellectual-bot-for-github[bot]" # You need to write here the internal name of the bot. Sorry, that you have to write this, but GitHub API does not provide a convinient API for that. Go to your app installation on GitHub and click "App settings". You will have this URL in your browser: `https://github.com/settings/apps/intellectual-bot-for-github`, you need to paste the last endpoint of the URL "intellectual-bot-for-github" and append the "[bot]" (without quotes) string.
+    app_id: 1234
+    installation_id: 123
+    pem_rsa_key_path: "..." # Write here the path to your private key file.
+
+webhook_server:
+  addr: "127.0.0.1"
+  port: 8099
+
+llm:
+  openai:
+    api_base_url: "https://api.openai.com/v1" # Do not change this value, if you will be using the OpenAI.
+    model_name: "gpt-4o-mini"
+    api_key_env_var: "GIB_OPENAI_KEY"
+
+bot:
+  features:
+    improve_feature:
+      agent:
+        system_message_template_path: "templates/improve/system_message.tmpl"
+        user_message_template_path: "templates/improve/user_message.tmpl"
+        completion_params:
+          temperature: 0.7
+
+    label_feature:
+      agent:
+        system_message_template_path: "templates/label/system_message.tmpl"
+        user_message_template_path: "templates/label/user_message.tmpl"
+        completion_params:
+          temperature: 0.7

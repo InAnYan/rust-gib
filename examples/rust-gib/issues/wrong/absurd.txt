@@ -1,0 +1,7 @@
+# Bot sends wrong messages
+
+Hello! I regret to say that your bot is working not very good...
+
+We used it on our repo and it gave strange results. For good issues, it wrote unnecessary comments, for wrongly formulated ones - it wrote absurd comments.
+
+We are considering to switching to alternatives...
