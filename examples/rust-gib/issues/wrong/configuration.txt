@@ -1,0 +1,9 @@
+# `config.yaml` not found
+
+Hello! I wanted to test your bot on my computer, but then I got this error after running `cargo run`:
+
+```
+Error: ConfigError(BuildError(configuration file "config.yaml" not found))
+```
+
+But I have config.yaml in the directory? What should I do? I think this is a bug.

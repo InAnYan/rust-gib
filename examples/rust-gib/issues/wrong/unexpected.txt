@@ -1,0 +1,5 @@
+# Unexpected error in the middle of working
+
+Hi, developers! I've successfully run your bot on my repo, and it seems to work fine for 2 or 3 issues. But when user opened a new issue in our repo, we didn't see comments from bots that we expected. And we saw that there was an error `file DB is locked`.
+
+What should we do in this case?
