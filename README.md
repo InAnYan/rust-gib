@@ -1,12 +1,12 @@
 # Git Intellectual Bot (GIB)
 
-## Project Description
+![Screenshot](screenshot.jpg)
 
 Git Intellectual Bot (GIB) is an intelligent bot designed to manage user issues in Git repositories, streamlining the development workflow through automation.
 
 You can try out the bot on this repo by making some issues!
 
-### Key Features:
+## Features
 
 - **Issue Analysis**: GIB reads newly opened issues and asks clarifying questions to improve the quality and completeness of the report.
 - **Automatic Labeling**: GIB analyzes the issue content and assigns relevant labels automatically to categorize the issues.
