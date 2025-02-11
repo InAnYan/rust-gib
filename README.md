@@ -21,4 +21,14 @@ Refer to [HOW_TO_RUN.md tutorial](HOW_TO_RUN.md).
 
 ## How this Project is Implemented
 
-Refer to the [IMPLEMENTATION.md file](IMPLEMENTATION.md).
+Tech stack:
+
+- OpenAI API
+- GitHub API
+- `async-openai`
+- `octocrab`
+- `tokio`
+- `axum`
+
+Refer also to the [IMPLEMENTATION.md file](IMPLEMENTATION.md).
+
